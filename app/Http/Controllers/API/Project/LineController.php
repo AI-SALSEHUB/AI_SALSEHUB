@@ -43,6 +43,8 @@ class LineController extends Controller
             ->get()
             ->each(function (Line $line) {
                 $line->setAttribute('numero', $line->numero);
+                $line->setAttribute('cloudtalk_agent_id', $line->cloudtalk_agent_id);
+                $line->setAttribute('cloudtalk_agent_name', $line->cloudtalk_agent_name);
                 $line->makeHidden('config');
             });
     }
@@ -112,21 +114,18 @@ class LineController extends Controller
             $request->input('operator'),
             (int) $request->input('user_id')
         );
-        $this->validateOperatorConfig(
+        $config = $this->validatedOperatorConfig(
             $request->input('operator'),
             $request->input('config', [])
         );
 
-        return $project
-            ->lines()
-            ->create(array_merge($request->only(
-                'name',
-                'operator',
-                'user_id',
-                'config'
-            ), [
+        return $project->lines()->create(array_merge(
+            $request->only('name', 'operator', 'user_id'),
+            [
+                'config' => $config,
                 'creator_id' => auth()->id(),
-            ]));
+            ]
+        ));
     }
 
     /**
@@ -155,16 +154,14 @@ class LineController extends Controller
             (int) $request->input('user_id'),
             $line
         );
-        $this->validateOperatorConfig(
+        $config = $this->validatedOperatorConfig(
             $request->input('operator'),
             $request->input('config', [])
         );
 
-        $line->update($request->only(
-            'name',
-            'operator',
-            'user_id',
-            'config'
+        $line->update(array_merge(
+            $request->only('name', 'operator', 'user_id'),
+            ['config' => $config]
         ));
 
         return ['message' => trans('common.success.updated_resource')];
@@ -239,10 +236,10 @@ class LineController extends Controller
         ]);
     }
 
-    protected function validateOperatorConfig(string $operator, array $config): void
+    protected function validatedOperatorConfig(string $operator, array $config): array
     {
         if ($operator !== 'cloudtalk') {
-            return;
+            return $config;
         }
 
         try {
@@ -253,14 +250,18 @@ class LineController extends Controller
             ]);
         }
 
-        $agentExists = collect($agents)->contains(
+        $agent = collect($agents)->first(
             fn ($agent) => (string) $agent['id'] === (string) ($config['agent_id'] ?? '')
         );
 
-        if (!$agentExists) {
+        if (!$agent) {
             throw ValidationException::withMessages([
                 'config.agent_id' => 'Agent CloudTalk introuvable pour ces identifiants.',
             ]);
         }
+
+        $config['agent_name'] = $agent['label'] ?? $agent['name'] ?? null;
+
+        return $config;
     }
 }

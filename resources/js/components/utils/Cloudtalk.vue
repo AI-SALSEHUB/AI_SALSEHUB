@@ -26,6 +26,29 @@
         </div> -->
         <div v-if="loading" class="hc-cloudtalk-loading">
             <loading :loading="loading" />
+            <div
+                v-if="showSlowLoadingMessage"
+                class="hc-cloudtalk-loading-help"
+            >
+                
+                <div class="hc-cloudtalk-loading-help-title">
+                    En attente de connexion à CloudTalk
+                </div>
+                <div>
+                    Vérifiez que
+                    <strong>vous êtes déjà connecté à CloudTalk dans le CRM</strong>
+                    et fermez les autres fenêtres
+                    <a
+                        href="https://phone.cloudtalk.io/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        https://phone.cloudtalk.io/
+                    </a>
+                    connectées à ce compte.
+                </div>
+
+            </div>
         </div>
         <iframe
             :src="src"
@@ -116,12 +139,45 @@
     right: 0;
     left: 0;
     z-index: 2;
-    height: 52px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 52px;
+    height: auto;
+    padding: 8px 10px 10px;
     background: rgba(255, 255, 255, 0.86);
 }
 
 .hc-cloudtalk-loading .hc-loading-overlay {
     background-color: transparent;
+    position: relative;
+    height: 28px;
+    opacity: 1;
+    visibility: visible;
+}
+
+.hc-cloudtalk-loading .hc-loading-overlay::before {
+    height: 28px;
+}
+
+.hc-cloudtalk-loading-help {
+    padding: 8px 10px;
+    border: 1px solid #d6e4f0;
+    border-radius: 6px;
+    background: #f4f9ff;
+    color: #334155;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.hc-cloudtalk-loading-help-title {
+    margin-bottom: 4px;
+    font-weight: 700;
+}
+
+.hc-cloudtalk-loading-help a {
+    color: #12a0f3;
+    overflow-wrap: anywhere;
 }
 </style>
 
@@ -171,24 +227,59 @@ export default {
             type: Boolean,
             default: false,
         },
+
+        agentName: {
+            type: String,
+            default: "",
+        },
+
+        slowLoadingDelay: {
+            type: Number,
+            default: 8000,
+        },
     },
 
     data() {
         return {
             origin: "https://phone.cloudtalk.io",
             allowedOrigin: /^https:\/\/([a-z0-9-]+\.)*cloudtalk\.io$/i,
+            slowLoadingTimeout: null,
+            showSlowLoadingMessage: false,
         };
     },
 
     mounted() {
         window.addEventListener("message", this.handleMessage);
+        this.syncSlowLoadingMessage();
     },
 
     beforeUnmount() {
         window.removeEventListener("message", this.handleMessage);
+        this.clearSlowLoadingTimer();
     },
 
     methods: {
+        syncSlowLoadingMessage() {
+            this.clearSlowLoadingTimer();
+
+            if (!this.loading) {
+                return;
+            }
+
+            this.slowLoadingTimeout = setTimeout(() => {
+                this.showSlowLoadingMessage = true;
+            }, this.slowLoadingDelay);
+        },
+
+        clearSlowLoadingTimer() {
+            if (this.slowLoadingTimeout) {
+                clearTimeout(this.slowLoadingTimeout);
+                this.slowLoadingTimeout = null;
+            }
+
+            this.showSlowLoadingMessage = false;
+        },
+
         requestCall() {
             if (!this.number || this.calling) {
                 return;
@@ -326,7 +417,17 @@ export default {
         },
     },
 
+    watch: {
+        loading() {
+            this.syncSlowLoadingMessage();
+        },
+    },
+
     computed: {
+        agentLabel() {
+            return this.agentName || "l'utilisateur CloudTalk";
+        },
+
         /**
          * CloudTalk Phone iframe url
          */

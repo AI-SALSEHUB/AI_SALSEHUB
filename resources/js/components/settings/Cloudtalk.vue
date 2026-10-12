@@ -1,17 +1,27 @@
 <template>
     <modal :name="name" title="CloudTalk" :width="520">
         <div class="hc-flex-column" style="height: 100%">
-            <item-list gap="5px" class="hc-flex-1" padding="10px 0">
+            <item-list
+                gap="5px"
+                class="hc-flex-1"
+                padding="10px 0"
+            >
                 <div class="hc-cloudtalk-webhook">
+
+                    <!-- En-tête -->
                     <div class="hc-cloudtalk-webhook-header">
                         <icon class="fa fa-link" />
-                        <span v-text="'Recevoir les nouveaux SMS'" />
+                        <span>Recevoir les nouveaux SMS</span>
                     </div>
+
+                    <!-- Description -->
                     <p class="hc-cloudtalk-webhook-help">
-                        Pour que les nouveaux SMS arrivent automatiquement dans
-                        le CRM, configurez cette URL comme webhook SMS entrant
-                        dans votre compte CloudTalk :
+                        Configurez un webhook CloudTalk pour
+                        recevoir automatiquement les nouveaux
+                        SMS dans votre CRM.
                     </p>
+
+                    <!-- URL du webhook -->
                     <div class="hc-cloudtalk-webhook-url">
                         <input
                             type="text"
@@ -19,15 +29,66 @@
                             :value="cloudtalkSmsWebhookUrl"
                             @focus="$event.target.select()"
                         />
+
                         <button
                             type="button"
                             class="hc-button-secondary"
                             @click.prevent="copyCloudtalkSmsWebhookUrl"
                         >
                             <icon class="fa fa-copy" />
-                            <span v-text="'Copier'" />
+                            <span>Copier</span>
                         </button>
                     </div>
+
+                    <!-- Instructions détaillées -->
+                    <div
+                        class="hc-cloudtalk-webhook-instructions"
+                    >
+                        <div class="hc-cloudtalk-webhook-instructions-title">
+                            Comment configurer la réception des SMS ?
+                        </div>
+
+                        <ol>
+                            <li>
+                                Accédez aux
+                                <a
+                                    href="https://dashboard.cloudtalk.io/menu/account/webhooks"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    https://dashboard.cloudtalk.io/menu/account/webhooks
+                                </a>.
+                            </li>
+
+                            <li>
+                                Ajoutez un nouveau webhook
+                                dans votre compte CloudTalk.
+                            </li>
+
+                            <li>
+                                Copiez l'URL ci-dessus et
+                                collez-la dans le champ URL
+                                du webhook.
+                            </li>
+
+                            <li>
+                                Sélectionnez uniquement
+                                l'événement
+                                <strong>message.received</strong>.
+                            </li>
+
+                            <li>
+                                Enregistrez votre configuration.
+                            </li>
+                        </ol>
+
+                        <p class="hc-cloudtalk-webhook-note">
+                            <icon class="fa fa-info-circle" />
+                            Les nouveaux SMS reçus seront
+                            automatiquement transmis au CRM.
+                        </p>
+                    </div>
+
                 </div>
             </item-list>
         </div>
@@ -78,6 +139,69 @@
     font-size: 12px;
 }
 
+/* Instructions */
+.hc-cloudtalk-webhook-instructions {
+    padding: 10px 0 0;
+    border-top: 1px solid #d6e4f0;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #495057;
+}
+
+.hc-cloudtalk-webhook-instructions-title {
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.hc-cloudtalk-webhook-instructions ol {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.hc-cloudtalk-webhook-instructions li {
+    margin-bottom: 7px;
+}
+
+.hc-cloudtalk-webhook-instructions strong {
+    color: #12a0f3;
+    font-weight: 600;
+}
+
+.hc-cloudtalk-webhook-instructions a {
+    color: #12a0f3;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.hc-cloudtalk-webhook-instructions a:hover {
+    text-decoration: underline;
+}
+
+.hc-cloudtalk-webhook-instructions a .fa {
+    font-size: 10px;
+    margin-left: 3px;
+}
+
+/* Note d'information */
+.hc-cloudtalk-webhook-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin: 8px 0 0;
+    padding: 8px;
+    border-radius: 4px;
+    background: #e6f3ff;
+    color: #495057;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.hc-cloudtalk-webhook-note .fa {
+    color: #12a0f3;
+    margin-top: 2px;
+}
+
+/* Mode sombre */
 .dark .hc-cloudtalk-webhook {
     border-color: #334155;
     background: #1e293b;
@@ -91,6 +215,16 @@
     border-color: #444444;
     background: #2a2a2a;
     color: #dddddd;
+}
+
+.dark .hc-cloudtalk-webhook-instructions {
+    border-color: #334155;
+    color: #bbbbbb;
+}
+
+.dark .hc-cloudtalk-webhook-note {
+    background: #263b53;
+    color: #cccccc;
 }
 </style>
 
@@ -115,7 +249,7 @@ export default {
                 .then(() => {
                     flashInfo({
                         title: "CloudTalk",
-                        body: "URL Webhook SMS CloudTalk copié",
+                        body: "URL Webhook SMS CloudTalk copiée",
                         duration: 5000,
                     });
                 })
@@ -133,7 +267,8 @@ export default {
         ...mapGetters(["project"]),
 
         /**
-         * CloudTalk SMS webhook URL used to receive incoming messages.
+         * URL du webhook CloudTalk pour
+         * recevoir les SMS entrants.
          */
         cloudtalkSmsWebhookUrl() {
             if (!this.project || !this.project.slug) {

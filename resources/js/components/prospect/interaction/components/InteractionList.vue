@@ -25,13 +25,7 @@
                 ></div>
                 <icon class="fa fa-caret-right" />
             </item>
-            <template
-                v-for="number in [
-                    interactionProspect.phone_number,
-                    interactionProspect.mobile_phone_number,
-                ].filter((n) => n)"
-                :key="number"
-            >
+            <template v-for="number in interactionNumbers" :key="number">
                 <!-- Telephone -->
                 <item
                     tag="a"
@@ -232,5 +226,20 @@ export default {
         "call-kavkom",
         "add-history",
     ],
+
+    computed: {
+        interactionNumbers() {
+            return [
+                this.interactionProspect.phone_number,
+                this.interactionProspect.mobile_phone_number,
+            ].reduce((numbers, number) => {
+                if (!number || numbers.includes(number)) {
+                    return numbers;
+                }
+
+                return [...numbers, number];
+            }, []);
+        },
+    },
 };
 </script>

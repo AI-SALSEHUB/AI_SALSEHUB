@@ -33,6 +33,8 @@
                 :number="interaction.number"
                 :calling="callingCloudtalk"
                 :loading="cloudtalkLoading"
+                :agent-name="cloudtalkAgentName"
+                :retry-visible="cloudtalkLoginRequired"
                 :lookup-loading="cloudtalkLookupLoading"
                 :lookup-number="cloudtalkLookup.number"
                 :prospect="cloudtalkCallProspect"
@@ -52,6 +54,7 @@
                 @hangup-call="cloudtalkCallHangup"
                 @answered-call="cloudtalkCallAnswered"
                 @contact-info="cloudtalkCallContactInfo"
+                @back="backFromCloudtalk"
                 @create-prospect="createCloudtalkProspect"
                 @context-panel-visible="
                     cloudtalkContextPanelVisible = $event
@@ -133,15 +136,16 @@
 }
 
 .hc-prospect-interaction-cloudtalk-panel {
-    --cloudtalk-phone-width: 440px;
+    --cloudtalk-phone-width: 300px;
     --cloudtalk-context-width: 320px;
     position: absolute;
-    top: 42px;
+    top: 0;
     right: 0;
     bottom: 0;
     left: 0;
     z-index: 5;
     display: flex;
+    flex-direction: column;
     background: #ffffff;
     opacity: 0;
     pointer-events: none;
@@ -163,6 +167,63 @@
     opacity: 1;
     pointer-events: auto;
     visibility: visible;
+}
+
+.hc-prospect-interaction-cloudtalk-back {
+    flex: 0 0 auto;
+}
+
+.hc-prospect-interaction-cloudtalk-content {
+    position: relative;
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.hc-prospect-interaction-cloudtalk-retry {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 3;
+    display: flex;
+    width: var(--cloudtalk-phone-width);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.9);
+    text-align: center;
+}
+
+.hc-prospect-interaction-cloudtalk-retry-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #333333;
+}
+
+.hc-prospect-interaction-cloudtalk-retry-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 34px;
+    padding: 8px 12px;
+    border: 1px solid #12a0f3;
+    border-radius: 4px;
+    background: #12a0f3;
+    color: #ffffff;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.hc-prospect-interaction-cloudtalk-retry-button:disabled {
+    border-color: #bbbbbb;
+    background: #bbbbbb;
+    cursor: wait;
 }
 
 .hc-prospect-interaction-cloudtalk-phone {
@@ -913,6 +974,17 @@ export default {
             this.resetCloudtalkSlideState();
         },
 
+        showDefaultInteractionView() {
+            if (this.interactionProspect) {
+                this.tab = 0;
+                this.frameTab = 0;
+                return;
+            }
+
+            this.tab = 1;
+            this.frameTab = 2;
+        },
+
         resetCloudtalkSlideState() {
             if (this.interaction.source != "cloudtalk" && this.frameTab != 5) {
                 return;
@@ -923,8 +995,7 @@ export default {
             this.cloudtalkWaitingForEvent = false;
             this.cloudtalkLoginRequired = false;
             this.clearCloudtalkEventTimeout();
-            this.tab = 0;
-            this.frameTab = 0;
+            this.showDefaultInteractionView();
         },
 
         startCloudtalkEventTimeout() {
@@ -1767,22 +1838,15 @@ export default {
         },
 
         slideWidth() {
-            if (this.cloudtalkPhoneDisplayed) {
-                if (
-                    this.cloudtalkCallContextVisible &&
-                    this.cloudtalkContextPanelVisible
-                ) {
-                    return "720px";
-                }
-
-                return "435px";
+            if (
+                this.cloudtalkPhoneDisplayed &&
+                this.cloudtalkCallContextVisible &&
+                this.cloudtalkContextPanelVisible
+            ) {
+                return "620px";
             }
 
-            if (this.tab == 1 && this.frameTab == 0) {
-                return "395px";
-            }
-
-            return "350px";
+            return "300px";
         },
 
         /**
@@ -1857,6 +1921,24 @@ export default {
             return this.cloudtalkLookup && this.cloudtalkLookup.messages
                 ? this.cloudtalkLookup.messages
                 : [];
+        },
+
+        cloudtalkAgentName() {
+            if (!this.cloudtalkLine) {
+                return "";
+            }
+
+            const agentId =
+                this.cloudtalkLine.cloudtalk_agent_id ||
+                this.cloudtalkLine.config?.agent_id;
+
+            return (
+                this.cloudtalkLine.cloudtalk_agent_name ||
+                this.cloudtalkLine.agent_name ||
+                this.cloudtalkLine.config?.agent_name ||
+                this.cloudtalkLine.config?.agent_label ||
+                (agentId ? "Agent CloudTalk #" + agentId : "")
+            );
         },
 
         cloudtalkLine() {
