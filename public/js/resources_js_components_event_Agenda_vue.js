@@ -3637,7 +3637,7 @@ function _toPrimitive(input, hint) { if (_typeof(input) !== "object" || input ==
       var _this = this;
       var keyword = removeStringAccent(this.userKeyword);
       return this.users.filter(function (user) {
-        return (_this.can("all.project.user.agenda") || user.id == _this.user.id) && removeStringAccent(user.name).indexOf(keyword) >= 0;
+        return (user.id == _this.user.id || _this.can("all.project.user.agenda." + user.id)) && removeStringAccent(user.name).indexOf(keyword) >= 0;
       }).sort(function (user1, user2) {
         return user1.pivot && user2.pivot && user1.pivot.relevance_event > user2.pivot.relevance_event ? -1 : 1;
       });

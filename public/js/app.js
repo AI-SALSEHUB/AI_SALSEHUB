@@ -57858,7 +57858,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-var googleMapInitialized = !!window.googleMap;
+var googleMapInitialized = !!(window.google && window.google.maps);
 var googleMapResolveInitPromise;
 var googleMapRejectInitPromise;
 // This promise handles the initialization
@@ -57867,7 +57867,29 @@ var initGoogleMapPromise = new Promise(function (resolve, reject) {
   googleMapResolveInitPromise = resolve;
   googleMapRejectInitPromise = reject;
 });
+function hasGoogleMaps() {
+  return !!(window.google && window.google.maps);
+}
+function getGoogleMapScriptSrc() {
+  if (true) {
+    var params = new URLSearchParams({
+      key: "AIzaSyCeXgdUFop51vFS_x8Bj5JlrCOZak8h4NA",
+      callback: "emitGoogleMapLoaded",
+      libraries: "places"
+    });
+    return "https://maps.googleapis.com/maps/api/js?".concat(params.toString());
+  }
+  return "https://maps.googleapis.com/maps/api/js?key=AIzaSyCeXgdUFop51vFS_x8Bj5JlrCOZak8h4NA&callback=emitGoogleMapLoaded&libraries=places";
+}
+function hasMissingApiKey(scriptSrc) {
+  return !scriptSrc || /[?&]key=(&|$)/.test(scriptSrc);
+}
 /* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__() {
+  if (hasGoogleMaps()) {
+    googleMapInitialized = true;
+    googleMapResolveInitPromise(window.google);
+    return initGoogleMapPromise;
+  }
   // If Google Maps already is googleMapInitialized
   // the `initGoogleMapPromise` should get resolved
   // eventually.
@@ -57877,16 +57899,21 @@ var initGoogleMapPromise = new Promise(function (resolve, reject) {
   // the Google Maps script if it is
   // successfully loaded.
   window.emitGoogleMapLoaded = function () {
-    return googleMapResolveInitPromise(window.googleMap);
+    return googleMapResolveInitPromise(window.google);
   };
 
   // We inject a new script tag into
   // the `<head>` of our HTML to load
   // the Google Maps script.
+  var scriptSrc = getGoogleMapScriptSrc();
+  if (hasMissingApiKey(scriptSrc)) {
+    googleMapRejectInitPromise(new Error("Google Maps API key is missing. Set MIX_GOOGLE_MAP_API_KEY or MIX_GOOGLE_MAP_API_JS_URI and rebuild assets."));
+    return initGoogleMapPromise;
+  }
   var script = document.createElement("script");
   script.async = true;
   script.defer = true;
-  script.src = "https://maps.googleapis.com/maps/api/js?key=&callback=emitGoogleMapLoaded&libraries=places";
+  script.src = scriptSrc;
   script.onerror = googleMapRejectInitPromise;
   document.querySelector("head").appendChild(script);
   return initGoogleMapPromise;

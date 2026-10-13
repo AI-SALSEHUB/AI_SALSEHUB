@@ -44,7 +44,7 @@
                 <item-list class="hc-flex-1" padding="5px">
                     <permission-row
                         v-for="permission in permissionGroup.sub"
-                        :key="permission.id"
+                        :key="permission.value || permission.id || permission.key"
                         :permission="permission"
                         :permission-value="currentPermissionValue(permission)"
                         :value="
@@ -63,7 +63,7 @@
                 v-for="permission in filteredPermissions(
                     currentPermissionGroup
                 )"
-                :key="permission.id"
+                :key="permission.value || permission.id || permission.key"
                 :permission="permission"
                 :permission-value="currentPermissionValue(permission)"
                 :value="
@@ -113,8 +113,13 @@ export default {
     },
 
     created() {
-        this.permissionGroups = [this.permissions];
-        this.computePermissionsList(permissionsList);
+        this.buildPermissionsList();
+    },
+
+    watch: {
+        userUsers() {
+            this.buildPermissionsList();
+        },
     },
 
     methods: {
@@ -122,6 +127,65 @@ export default {
             if (this.permissionGroups.length > 1) {
                 this.permissionGroups.pop();
             }
+        },
+
+        buildPermissionsList() {
+            const previousValues = this.permissionGroups
+                .map((permissionGroup) => permissionGroup.value)
+                .filter((value) => value);
+
+            this.permissions = JSON.parse(JSON.stringify(permissionsList));
+            this.setAgendaUsersPermissions(this.permissions);
+            this.computePermissionsList(this.permissions);
+
+            if (previousValues.length == 0) {
+                this.permissionGroups = [this.permissions];
+                return;
+            }
+
+            const permissionGroups = previousValues
+                .map((value) => this.findPermissionByValue(this.permissions, value))
+                .filter((permissionGroup) => permissionGroup);
+
+            this.permissionGroups =
+                permissionGroups.length > 0 ? permissionGroups : [this.permissions];
+        },
+
+        setAgendaUsersPermissions(permission) {
+            if (permission.key == "agenda") {
+                permission.sub = this.userUsers.map((user) => ({
+                    key: user.id.toString(),
+                    name: user.name,
+                    icon: "fa-user icon-brown",
+                    ignoreParentPermission: true,
+                }));
+                return;
+            }
+
+            if (permission.sub) {
+                permission.sub.forEach((sub) =>
+                    this.setAgendaUsersPermissions(sub)
+                );
+            }
+        },
+
+        findPermissionByValue(permission, value) {
+            if (permission.value == value) {
+                return permission;
+            }
+
+            if (!permission.sub) {
+                return null;
+            }
+
+            for (let i = 0; i < permission.sub.length; ++i) {
+                const result = this.findPermissionByValue(permission.sub[i], value);
+                if (result) {
+                    return result;
+                }
+            }
+
+            return null;
         },
 
         computePermissionsList(list, key) {
@@ -179,6 +243,25 @@ export default {
             const key = this.currentPermissionValue(permission);
 
             return this.isPermissionNameChecked(key);
+        },
+
+        permissionValue(permission) {
+            if (permission && permission.ignoreParentPermission) {
+                return this.isPermissionChecked(permission);
+            }
+
+            return (
+                this.isPermissionChecked(permission) ||
+                this.isPermissionDisabled(permission)
+            );
+        },
+
+        permissionDisabled(permission) {
+            if (permission && permission.ignoreParentPermission) {
+                return false;
+            }
+
+            return this.isPermissionDisabled(permission);
         },
 
         /**
@@ -279,7 +362,7 @@ export default {
     },
 
     computed: {
-        ...mapGetters(["user", "userPermissions", "userFullName"]),
+        ...mapGetters(["user", "userPermissions", "userFullName", "userUsers"]),
 
         currentPermissionGroup: {
             get() {

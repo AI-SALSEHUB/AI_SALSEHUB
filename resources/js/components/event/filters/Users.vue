@@ -772,8 +772,8 @@ export default {
             return this.users
                 .filter(
                     (user) =>
-                        (this.can("all.project.user.agenda") ||
-                            user.id == this.user.id) &&
+                        (user.id == this.user.id ||
+                            this.can("all.project.user.agenda." + user.id)) &&
                         removeStringAccent(user.name).indexOf(keyword) >= 0
                 )
                 .sort((user1, user2) =>

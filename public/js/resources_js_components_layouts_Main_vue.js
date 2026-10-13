@@ -52441,8 +52441,12 @@ function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len 
     };
   },
   created: function created() {
-    this.permissionGroups = [this.permissions];
-    this.computePermissionsList(_utils_permissions__WEBPACK_IMPORTED_MODULE_1__["default"]);
+    this.buildPermissionsList();
+  },
+  watch: {
+    userUsers: function userUsers() {
+      this.buildPermissionsList();
+    }
   },
   methods: {
     back: function back() {
@@ -52450,12 +52454,67 @@ function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len 
         this.permissionGroups.pop();
       }
     },
-    computePermissionsList: function computePermissionsList(list, key) {
+    buildPermissionsList: function buildPermissionsList() {
       var _this = this;
+      var previousValues = this.permissionGroups.map(function (permissionGroup) {
+        return permissionGroup.value;
+      }).filter(function (value) {
+        return value;
+      });
+      this.permissions = JSON.parse(JSON.stringify(_utils_permissions__WEBPACK_IMPORTED_MODULE_1__["default"]));
+      this.setAgendaUsersPermissions(this.permissions);
+      this.computePermissionsList(this.permissions);
+      if (previousValues.length == 0) {
+        this.permissionGroups = [this.permissions];
+        return;
+      }
+      var permissionGroups = previousValues.map(function (value) {
+        return _this.findPermissionByValue(_this.permissions, value);
+      }).filter(function (permissionGroup) {
+        return permissionGroup;
+      });
+      this.permissionGroups = permissionGroups.length > 0 ? permissionGroups : [this.permissions];
+    },
+    setAgendaUsersPermissions: function setAgendaUsersPermissions(permission) {
+      var _this2 = this;
+      if (permission.key == "agenda") {
+        permission.sub = this.userUsers.map(function (user) {
+          return {
+            key: user.id.toString(),
+            name: user.name,
+            icon: "fa-user icon-brown",
+            ignoreParentPermission: true
+          };
+        });
+        return;
+      }
+      if (permission.sub) {
+        permission.sub.forEach(function (sub) {
+          return _this2.setAgendaUsersPermissions(sub);
+        });
+      }
+    },
+    findPermissionByValue: function findPermissionByValue(permission, value) {
+      if (permission.value == value) {
+        return permission;
+      }
+      if (!permission.sub) {
+        return null;
+      }
+      for (var i = 0; i < permission.sub.length; ++i) {
+        var result = this.findPermissionByValue(permission.sub[i], value);
+        if (result) {
+          return result;
+        }
+      }
+      return null;
+    },
+    computePermissionsList: function computePermissionsList(list, key) {
+      var _this3 = this;
       list.value = (key ? key + "." : "") + list.key;
       if (list.sub) {
         list.sub.forEach(function (sub) {
-          return _this.computePermissionsList(sub, list.value);
+          return _this3.computePermissionsList(sub, list.value);
         });
       }
     },
@@ -52499,6 +52558,18 @@ function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len 
     isPermissionChecked: function isPermissionChecked(permission) {
       var key = this.currentPermissionValue(permission);
       return this.isPermissionNameChecked(key);
+    },
+    permissionValue: function permissionValue(permission) {
+      if (permission && permission.ignoreParentPermission) {
+        return this.isPermissionChecked(permission);
+      }
+      return this.isPermissionChecked(permission) || this.isPermissionDisabled(permission);
+    },
+    permissionDisabled: function permissionDisabled(permission) {
+      if (permission && permission.ignoreParentPermission) {
+        return false;
+      }
+      return this.isPermissionDisabled(permission);
     },
     /**
      *
@@ -52570,7 +52641,7 @@ function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len 
       return permissionGroup.sub;
     }
   },
-  computed: _objectSpread(_objectSpread({}, (0,vuex__WEBPACK_IMPORTED_MODULE_5__.mapGetters)(["user", "userPermissions", "userFullName"])), {}, {
+  computed: _objectSpread(_objectSpread({}, (0,vuex__WEBPACK_IMPORTED_MODULE_5__.mapGetters)(["user", "userPermissions", "userFullName", "userUsers"])), {}, {
     currentPermissionGroup: {
       get: function get() {
         return this.permissionGroups.length > 0 ? this.permissionGroups[this.permissionGroups.length - 1] : null;
@@ -52664,9 +52735,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
 /* harmony import */ var _store__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @/store */ "./resources/js/store/index.js");
-/* harmony import */ var vuex__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! vuex */ "./node_modules/vuex/dist/vuex.esm-bundler.js");
+/* harmony import */ var vuex__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! vuex */ "./node_modules/vuex/dist/vuex.esm-bundler.js");
 /* harmony import */ var _actions_project_user_permission__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @/actions/project/user/permission */ "./resources/js/actions/project/user/permission.js");
-/* harmony import */ var _Layout_vue__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Layout.vue */ "./resources/js/components/user/permission/Layout.vue");
+/* harmony import */ var _actions_project_user_user__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @/actions/project/user/user */ "./resources/js/actions/project/user/user.js");
+/* harmony import */ var _Layout_vue__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./Layout.vue */ "./resources/js/components/user/permission/Layout.vue");
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { _defineProperty(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
@@ -52679,11 +52751,12 @@ function _toPrimitive(input, hint) { if (_typeof(input) !== "object" || input ==
 // Actions
 
 
+
 // Components
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
   components: {
-    Layout: _Layout_vue__WEBPACK_IMPORTED_MODULE_2__["default"]
+    Layout: _Layout_vue__WEBPACK_IMPORTED_MODULE_3__["default"]
   },
   methods: {
     /**
@@ -52692,10 +52765,11 @@ function _toPrimitive(input, hint) { if (_typeof(input) !== "object" || input ==
     fetchUserPermissions: function fetchUserPermissions() {
       if (this.user) {
         _store__WEBPACK_IMPORTED_MODULE_0__["default"].dispatch(_actions_project_user_permission__WEBPACK_IMPORTED_MODULE_1__.FETCH_USER_PERMISSIONS, this.user);
+        _store__WEBPACK_IMPORTED_MODULE_0__["default"].dispatch(_actions_project_user_user__WEBPACK_IMPORTED_MODULE_2__.FETCH_USER_USERS, this.user);
       }
     }
   },
-  computed: _objectSpread({}, (0,vuex__WEBPACK_IMPORTED_MODULE_3__.mapGetters)(["user", "userFullName"]))
+  computed: _objectSpread({}, (0,vuex__WEBPACK_IMPORTED_MODULE_4__.mapGetters)(["user", "userFullName"]))
 });
 
 /***/ }),
@@ -99386,7 +99460,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
           "default": (0,vue__WEBPACK_IMPORTED_MODULE_0__.withCtx)(function () {
             return [((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)(permissionGroup.sub, function (permission) {
               return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_permission_row, {
-                key: permission.id,
+                key: permission.value || permission.id || permission.key,
                 permission: permission,
                 "permission-value": $options.currentPermissionValue(permission),
                 value: $options.isPermissionChecked(permission) || $options.isPermissionDisabled(permission),
@@ -99410,7 +99484,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
     "default": (0,vue__WEBPACK_IMPORTED_MODULE_0__.withCtx)(function () {
       return [((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($options.filteredPermissions($options.currentPermissionGroup), function (permission) {
         return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_permission_row, {
-          key: permission.id,
+          key: permission.value || permission.id || permission.key,
           permission: permission,
           "permission-value": $options.currentPermissionValue(permission),
           value: $options.isPermissionChecked(permission) || $options.isPermissionDisabled(permission),
@@ -103071,7 +103145,8 @@ __webpack_require__.r(__webpack_exports__);
       }, {
         key: "agenda",
         name: "Voir les agendas des autres utilisateurs",
-        icon: "fa-calendar icon-purple"
+        icon: "fa-calendar icon-purple",
+        sub: []
       }, {
         key: "commission",
         name: "Gérer les commission d'un utilisateur",

@@ -260,19 +260,43 @@ class EventController extends Controller
 
         // Permission to view the agendas of the other users
         $canViewOthersAgenda = auth()->user()->can('projectUserAgenda', $project);
+        $agendaUserIds = [auth()->id()];
+
+        if (!$canViewOthersAgenda) {
+            $agendaPermissionPrefix = 'all.project.user.agenda.';
+            $agendaUserIds = auth()->user()
+                ->getAllPermissions()
+                ->pluck('name')
+                ->filter(function($permission) use($agendaPermissionPrefix) {
+                    return Str::startsWith($permission, $agendaPermissionPrefix);
+                })
+                ->map(function($permission) use($agendaPermissionPrefix) {
+                    return Str::after($permission, $agendaPermissionPrefix);
+                })
+                ->filter(function($userId) {
+                    return ctype_digit((string) $userId);
+                })
+                ->map(function($userId) {
+                    return (int) $userId;
+                })
+                ->prepend(auth()->id())
+                ->unique()
+                ->values()
+                ->all();
+        }
 
         // Result
         $events = Event
             ::whereHas('calendar', function($query) use($project) {
                 $query->where('project_id', $project->id);
             })
-            ->when(!$canViewOthersAgenda, function($query) {
-                $query->where(function($query) {
+            ->when(!$canViewOthersAgenda, function($query) use($agendaUserIds) {
+                $query->where(function($query) use($agendaUserIds) {
                     $query
-                        ->where('user_id', auth()->id())
+                        ->whereIn('user_id', $agendaUserIds)
                         ->orWhere('creator_id', auth()->id())
-                        ->orWhereHas('users', function($query) {
-                            $query->where('users.id', auth()->id());
+                        ->orWhereHas('users', function($query) use($agendaUserIds) {
+                            $query->whereIn('users.id', $agendaUserIds);
                         });
                 });
             })
