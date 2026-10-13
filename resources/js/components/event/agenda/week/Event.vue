@@ -1153,7 +1153,24 @@ export default {
                 return true;
             }
 
+            if (this.canEditEventUserAgenda) {
+                return true;
+            }
+
             return false;
+        },
+
+        canEditEventUserAgenda() {
+            const userIds = [
+                this.event.user_id,
+                ...(Array.isArray(this.event.users)
+                    ? this.event.users.map((user) => user.id)
+                    : []),
+            ].filter((userId) => userId);
+
+            return userIds.some((userId) =>
+                this.can("all.project.user.agenda." + userId)
+            );
         },
 
         associated() {

@@ -2246,6 +2246,10 @@ export default {
                 return true;
             }
 
+            if (this.canEditEventUserAgenda) {
+                return true;
+            }
+
             // Users assigned to the event prospect
             const prospectUsers =
                 (this.prospectEvent.prospect &&
@@ -2263,6 +2267,20 @@ export default {
             }
 
             return false;
+        },
+
+        canEditEventUserAgenda() {
+            const userIds = [
+                this.prospectEvent.user_id,
+                this.prospectEvent.user ? this.prospectEvent.user.id : null,
+                ...(Array.isArray(this.prospectEvent.users)
+                    ? this.prospectEvent.users.map((user) => user.id)
+                    : []),
+            ].filter((userId) => userId);
+
+            return [...new Set(userIds)].some((userId) =>
+                this.can("all.project.user.agenda." + userId)
+            );
         },
 
         minimumAgendaHour: {

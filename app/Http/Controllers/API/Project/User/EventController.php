@@ -15,7 +15,7 @@ class EventController extends Controller
     public function update(Project $project, User $user, Event $event)
     {
         abort_unless($project->id == $event->calendar->project_id, 404);
-        abort_unless(auth()->user()->can('', $project) || $event->user_id == auth()->id() || $event->creator_id == auth()->id(), 404);
+        abort_unless($this->canEditEvent($project, $event), 404);
 
         $event
             ->users()
@@ -39,10 +39,40 @@ class EventController extends Controller
     public function destroy(Project $project, User $user, Event $event)
     {
         abort_unless($project->id == $event->calendar->project_id, 404);
-        abort_unless(auth()->user()->can('', $project) || $event->user_id == auth()->id() || $event->creator_id == auth()->id(), 404);
+        abort_unless($this->canEditEvent($project, $event), 404);
 
         $event->users()->detach($user->id);
 
         return ['message' => trans('common.success.detached_resource')];
+    }
+
+    protected function canEditEvent(Project $project, Event $event)
+    {
+        return auth()->user()->can('', $project) ||
+            $event->user_id == auth()->id() ||
+            $event->creator_id == auth()->id() ||
+            $this->canEditEventUserAgenda($project, $event);
+    }
+
+    protected function canEditUserAgenda(Project $project, $userId)
+    {
+        return $userId && (
+            auth()->user()->can('projectUserAgenda', $project) ||
+            auth()->user()->can("all.project.user.agenda.{$userId}")
+        );
+    }
+
+    protected function canEditEventUserAgenda(Project $project, Event $event)
+    {
+        if ($this->canEditUserAgenda($project, $event->user_id)) {
+            return true;
+        }
+
+        return $event
+            ->users()
+            ->pluck('users.id')
+            ->contains(function($userId) use($project) {
+                return $this->canEditUserAgenda($project, $userId);
+            });
     }
 }

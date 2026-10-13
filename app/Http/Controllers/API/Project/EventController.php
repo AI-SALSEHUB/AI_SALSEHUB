@@ -101,6 +101,8 @@ class EventController extends Controller
             $event->user_id == auth()->id() || 
             // Creator user
             $event->creator_id == auth()->id() || 
+            // Users allowed in agenda permissions
+            $this->canEditEventUserAgenda($project, $event) ||
             // Associated users
             $event->users()->where('id', auth()->id())->first() ||
             // Users assigned to the event prospect
@@ -153,6 +155,8 @@ class EventController extends Controller
             $event->user_id == auth()->id() || 
             // Creator user
             $event->creator_id == auth()->id() ||
+            // Users allowed in agenda permissions
+            $this->canEditEventUserAgenda($project, $event) ||
             // Users assigned to the event prospect
             $this->isProspectUser($event),
             404
@@ -193,6 +197,8 @@ class EventController extends Controller
             $event->user_id == auth()->id() || 
             // Creator user
             $event->creator_id == auth()->id() ||
+            // Users allowed in agenda permissions
+            $this->canEditEventUserAgenda($project, $event) ||
             // Users assigned to the event prospect
             $this->isProspectUser($event),
             404
@@ -212,6 +218,34 @@ class EventController extends Controller
             $event->prospect()->whereHas('users', function($query) {
                 $query->where('users.id', auth()->id());
             })->exists();
+    }
+
+    /**
+     * Is the authenticated user allowed to edit this user's agenda
+     */
+    protected function canEditUserAgenda(Project $project, $userId)
+    {
+        return $userId && (
+            auth()->user()->can('projectUserAgenda', $project) ||
+            auth()->user()->can("all.project.user.agenda.{$userId}")
+        );
+    }
+
+    /**
+     * Is the authenticated user allowed to edit the event agenda user
+     */
+    protected function canEditEventUserAgenda(Project $project, Event $event)
+    {
+        if ($this->canEditUserAgenda($project, $event->user_id)) {
+            return true;
+        }
+
+        return $event
+            ->users()
+            ->pluck('users.id')
+            ->contains(function($userId) use($project) {
+                return $this->canEditUserAgenda($project, $userId);
+            });
     }
 
     /**

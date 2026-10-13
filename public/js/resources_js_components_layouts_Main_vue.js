@@ -22785,6 +22785,9 @@ function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len 
       if (this.prospectEvent.creator_id == this.user.id) {
         return true;
       }
+      if (this.canEditEventUserAgenda) {
+        return true;
+      }
 
       // Users assigned to the event prospect
       var prospectUsers = this.prospectEvent.prospect && this.prospectEvent.prospect.users || (this.prospect && this.prospect.id == this.prospectEvent.prospect_id ? this.prospect.users : null);
@@ -22794,6 +22797,17 @@ function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len 
         return true;
       }
       return false;
+    },
+    canEditEventUserAgenda: function canEditEventUserAgenda() {
+      var _this11 = this;
+      var userIds = [this.prospectEvent.user_id, this.prospectEvent.user ? this.prospectEvent.user.id : null].concat(_toConsumableArray(Array.isArray(this.prospectEvent.users) ? this.prospectEvent.users.map(function (user) {
+        return user.id;
+      }) : [])).filter(function (userId) {
+        return userId;
+      });
+      return _toConsumableArray(new Set(userIds)).some(function (userId) {
+        return _this11.can("all.project.user.agenda." + userId);
+      });
     },
     minimumAgendaHour: {
       get: function get() {
