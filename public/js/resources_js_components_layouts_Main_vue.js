@@ -30345,6 +30345,67 @@ __webpack_require__.r(__webpack_exports__);
     },
     audioTitle: function audioTitle() {
       return this.interaction.source == "cloudtalk" ? "Ecouter la conversation" : "Ecouter l'enregistrement";
+    },
+    callDirection: function callDirection() {
+      var _this$interaction$dat, _this$interaction$dat2, _this$interaction$dat3, _this$interaction$dat4, _this$interaction$dat5;
+      var direction = this.interaction.call_direction || ((_this$interaction$dat = this.interaction.data) === null || _this$interaction$dat === void 0 ? void 0 : _this$interaction$dat.direction) || ((_this$interaction$dat2 = this.interaction.data) === null || _this$interaction$dat2 === void 0 || (_this$interaction$dat2 = _this$interaction$dat2.cloudtalk_call) === null || _this$interaction$dat2 === void 0 ? void 0 : _this$interaction$dat2.direction) || ((_this$interaction$dat3 = this.interaction.data) === null || _this$interaction$dat3 === void 0 || (_this$interaction$dat3 = _this$interaction$dat3.cloudtalk_call) === null || _this$interaction$dat3 === void 0 ? void 0 : _this$interaction$dat3.type) || ((_this$interaction$dat4 = this.interaction.data) === null || _this$interaction$dat4 === void 0 || (_this$interaction$dat4 = _this$interaction$dat4.cloudtalk_history) === null || _this$interaction$dat4 === void 0 || (_this$interaction$dat4 = _this$interaction$dat4.Cdr) === null || _this$interaction$dat4 === void 0 ? void 0 : _this$interaction$dat4.direction) || ((_this$interaction$dat5 = this.interaction.data) === null || _this$interaction$dat5 === void 0 || (_this$interaction$dat5 = _this$interaction$dat5.cloudtalk_history) === null || _this$interaction$dat5 === void 0 || (_this$interaction$dat5 = _this$interaction$dat5.Cdr) === null || _this$interaction$dat5 === void 0 ? void 0 : _this$interaction$dat5.type) || "";
+      var normalizedDirection = String(direction).toLowerCase();
+      if (["inbound", "incoming", "in"].includes(normalizedDirection)) {
+        return "incoming";
+      }
+      if (["outbound", "outgoing", "out"].includes(normalizedDirection)) {
+        return "outgoing";
+      }
+      if (this.interaction.from_user === false) {
+        return "incoming";
+      }
+      return this.interaction.from_user ? "outgoing" : "";
+    },
+    callDirectionIcon: function callDirectionIcon() {
+      if (this.callDirection == "incoming") {
+        return "fa fa-arrow-down";
+      }
+      if (this.callDirection == "outgoing") {
+        return "fa fa-arrow-up";
+      }
+      return "";
+    },
+    callDirectionColor: function callDirectionColor() {
+      return this.callDirection == "incoming" ? "#1e88e5" : "#489f1f";
+    },
+    callDirectionTitle: function callDirectionTitle() {
+      return this.callDirection == "incoming" ? "Appel entrant" : "Appel sortant";
+    },
+    callOutcome: function callOutcome() {
+      var _this$interaction$dat6, _this$interaction$dat7;
+      var outcome = this.interaction.call_outcome || ((_this$interaction$dat6 = this.interaction.data) === null || _this$interaction$dat6 === void 0 ? void 0 : _this$interaction$dat6.outcome) || ((_this$interaction$dat7 = this.interaction.data) === null || _this$interaction$dat7 === void 0 || (_this$interaction$dat7 = _this$interaction$dat7.cloudtalk_call) === null || _this$interaction$dat7 === void 0 ? void 0 : _this$interaction$dat7.outcome) || this.interaction.status || "";
+      var normalized = String(outcome).toLowerCase();
+      if (["voicemail", "voice_mail", "voice mail", "messagerie"].some(function (value) {
+        return normalized.includes(value);
+      })) {
+        return "voicemail";
+      }
+      if (["missed", "no_answer", "not_answered", "unanswered", "abandoned", "lost"].some(function (value) {
+        return normalized.includes(value);
+      })) {
+        return "missed";
+      }
+      return "";
+    },
+    callOutcomeIcon: function callOutcomeIcon() {
+      if (this.callOutcome == "voicemail") {
+        return "fa fa-voicemail";
+      }
+      if (this.callOutcome == "missed") {
+        return "fa fa-phone-slash";
+      }
+      return "";
+    },
+    callOutcomeColor: function callOutcomeColor() {
+      return this.callOutcome == "voicemail" ? "#8e24aa" : "#d32f2f";
+    },
+    callOutcomeTitle: function callOutcomeTitle() {
+      return this.callOutcome == "voicemail" ? "Messagerie vocale" : "Appel manqué";
     }
   },
   methods: {
@@ -30449,6 +30510,7 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
       cloudtalkLoginRequired: false,
       cloudtalkPhoneVisible: false,
       cloudtalkContextPanelVisible: false,
+      cloudtalkReturnProspect: null,
       cloudtalkEventTimeout: null,
       cloudtalkCreatingProspect: false,
       cloudtalkLookup: {
@@ -30486,6 +30548,7 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
     newInteraction: function newInteraction() {
       return {
         source: "telephone",
+        from_user: true,
         number: "",
         status: "new",
         data: {}
@@ -30775,6 +30838,7 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
         return _regeneratorRuntime().wrap(function _callee4$(_context4) {
           while (1) switch (_context4.prev = _context4.next) {
             case 0:
+              _this5.rememberCloudtalkReturnProspect();
               _this5.tab = 1;
               _this5.frameTab = 5;
               _this5.cloudtalkPhoneVisible = true;
@@ -30782,15 +30846,19 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
               _this5.cloudtalkLoginRequired = false;
               _this5.interaction = _this5.newInteraction();
               _this5.interaction.source = "cloudtalk";
+              _this5.interaction.from_user = true;
               _this5.interaction.number = number;
-              _context4.next = 10;
+              _this5.interaction.data = {
+                direction: "outgoing"
+              };
+              _context4.next = 13;
               return _this5.addInteraction();
-            case 10:
+            case 13:
               _this5.fetchCloudtalkCallContext({
                 external_number: number
               });
               _this5.makeCloudtalkCall();
-            case 12:
+            case 15:
             case "end":
               return _context4.stop();
           }
@@ -30838,31 +30906,36 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
               response = _context5.sent;
               callId = _this6.cloudtalkCallId(response, false);
               _this6.interaction.status = "initiated";
+              _this6.interaction.from_user = true;
               _this6.interaction.data = _objectSpread(_objectSpread({}, _this6.interaction.data || {}), {}, {
-                cloudtalk: response.responseData
+                cloudtalk: response.responseData,
+                direction: "outgoing"
               }, callId ? {
                 id: callId,
                 call_id: callId
               } : {});
               if (!response.interaction) {
-                _context5.next = 25;
+                _context5.next = 26;
                 break;
               }
               _this6.interaction = response.interaction;
-              _store__WEBPACK_IMPORTED_MODULE_0__["default"].commit(_actions_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_8__.UPDATE_PROSPECT_INTERACTION, response.interaction);
-              _context5.next = 27;
+              _store__WEBPACK_IMPORTED_MODULE_0__["default"].commit(_actions_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_8__.UPDATE_PROSPECT_INTERACTION, {
+                prospectId: response.interaction.prospect_id,
+                interaction: response.interaction
+              });
+              _context5.next = 28;
               break;
-            case 25:
-              _context5.next = 27;
+            case 26:
+              _context5.next = 28;
               return _this6.updateInteraction();
-            case 27:
+            case 28:
               if (_this6.cloudtalkWaitingForEvent) {
                 _this6.startCloudtalkEventTimeout();
               }
-              _context5.next = 41;
+              _context5.next = 42;
               break;
-            case 30:
-              _context5.prev = 30;
+            case 31:
+              _context5.prev = 31;
               _context5.t0 = _context5["catch"](7);
               _this6.cloudtalkWaitingForEvent = false;
               _this6.clearCloudtalkEventTimeout();
@@ -30881,18 +30954,19 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
                 body: message,
                 duration: 7000
               });
-            case 41:
-              _context5.prev = 41;
+            case 42:
+              _context5.prev = 42;
               _this6.callingCloudtalk = false;
-              return _context5.finish(41);
-            case 44:
+              return _context5.finish(42);
+            case 45:
             case "end":
               return _context5.stop();
           }
-        }, _callee5, null, [[7, 30, 41, 44]]);
+        }, _callee5, null, [[7, 31, 42, 45]]);
       }))();
     },
     showCloudtalkPhone: function showCloudtalkPhone() {
+      this.rememberCloudtalkReturnProspect();
       this.clearCloudtalkEventTimeout();
       this.cloudtalkWaitingForEvent = false;
       this.cloudtalkLoginRequired = false;
@@ -30915,14 +30989,15 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
     prepareCloudtalkInteractionFromIframe: function prepareCloudtalkInteractionFromIframe() {
       var callInfos = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
       this.syncIncomingCloudtalkProspect(callInfos);
-      var callId = callInfos.call_uuid || callInfos.call_id || callInfos.id;
-      var currentCallId = this.interaction && this.interaction.data && (this.interaction.data.id || this.interaction.data.call_uuid || this.interaction.data.cdr_id || this.interaction.data.call_id);
-      if (this.interaction && this.interaction.source == "cloudtalk" && (!callId || !currentCallId || currentCallId == callId)) {
+      if (this.isCurrentCloudtalkInteractionEvent(callInfos)) {
+        this.setCloudtalkCallData(callInfos);
         this.fetchCloudtalkCallContext(callInfos);
+        this.updateInteraction();
         return;
       }
       this.interaction = this.newInteraction();
       this.interaction.source = "cloudtalk";
+      this.interaction.from_user = this.cloudtalkCallDirection(callInfos) != "incoming";
       this.interaction.number = this.cloudtalkCallNumber(callInfos);
       this.interaction.from_number = callInfos.internal_number || "";
       this.setCloudtalkCallData(callInfos);
@@ -30935,11 +31010,35 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
       this.tab = 1;
       this.frameTab = 5;
     },
+    loginCloudtalk: function loginCloudtalk() {
+      this.cloudtalkWaitingForEvent = false;
+      this.cloudtalkLoginRequired = false;
+      this.cloudtalkPhoneVisible = true;
+      this.tab = 1;
+      this.frameTab = 5;
+    },
     backFromCloudtalk: function backFromCloudtalk() {
       this.resetCloudtalkSlideState();
     },
-    showDefaultInteractionView: function showDefaultInteractionView() {
+    backFromInteractionFrame: function backFromInteractionFrame() {
       if (this.interactionProspect) {
+        this.tab = 0;
+        this.frameTab = 0;
+        return;
+      }
+      _store__WEBPACK_IMPORTED_MODULE_0__["default"].commit(_actions_slide__WEBPACK_IMPORTED_MODULE_9__.CLOSE_SLIDE, true);
+    },
+    rememberCloudtalkReturnProspect: function rememberCloudtalkReturnProspect() {
+      if (!this.cloudtalkReturnProspect && this.interactionProspect) {
+        this.cloudtalkReturnProspect = this.interactionProspect;
+      }
+    },
+    showDefaultInteractionView: function showDefaultInteractionView() {
+      var prospect = this.interactionProspect || this.cloudtalkCallProspect || this.cloudtalkReturnProspect;
+      if (prospect) {
+        if (!this.interactionProspect || this.interactionProspect.id != prospect.id) {
+          this.setActiveInteractionProspect(prospect);
+        }
         this.tab = 0;
         this.frameTab = 0;
         return;
@@ -30957,6 +31056,7 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
       this.cloudtalkLoginRequired = false;
       this.clearCloudtalkEventTimeout();
       this.showDefaultInteractionView();
+      this.cloudtalkReturnProspect = null;
     },
     startCloudtalkEventTimeout: function startCloudtalkEventTimeout() {
       var _this8 = this;
@@ -30982,114 +31082,142 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
     },
     cloudtalkCallRinging: function cloudtalkCallRinging(callInfos) {
       this.showCloudtalkPhone();
-      this.interaction.status = "ringing";
+      this.interaction.status = this.cloudtalkCallStatus(callInfos, "ringing");
       this.setCloudtalkCallData(callInfos);
       this.fetchCloudtalkCallContext(callInfos);
       this.updateInteraction();
     },
     cloudtalkCallOutgoing: function cloudtalkCallOutgoing(callInfos) {
       this.showCloudtalkPhone();
-      this.interaction.status = "initiated";
+      this.interaction.status = this.cloudtalkCallStatus(callInfos, "initiated");
       this.setCloudtalkCallData(callInfos);
       this.fetchCloudtalkCallContext(callInfos);
       this.updateInteraction();
     },
     cloudtalkCallAnswered: function cloudtalkCallAnswered(callInfos) {
       this.showCloudtalkPhone();
-      this.interaction.status = "answered";
+      this.interaction.status = this.cloudtalkCallStatus(callInfos, "answered");
       this.setCloudtalkCallData(callInfos);
       this.fetchCloudtalkCallContext(callInfos);
       this.updateInteraction();
     },
     cloudtalkCallHangup: function cloudtalkCallHangup(callInfos) {
-      this.showCloudtalkPhone();
-      this.interaction.status = "hangup";
-      this.setCloudtalkCallData(callInfos);
-      this.fetchCloudtalkCallContext(callInfos);
-      this.updateInteraction();
-      if (this.interactionProspect) {
-        this.nextInteraction();
-      }
+      var _this9 = this;
+      return _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee6() {
+        return _regeneratorRuntime().wrap(function _callee6$(_context6) {
+          while (1) switch (_context6.prev = _context6.next) {
+            case 0:
+              _this9.showCloudtalkPhone();
+              _this9.interaction.status = _this9.cloudtalkCallStatus(callInfos, "hangup");
+              _this9.setCloudtalkCallData(callInfos);
+              _this9.fetchCloudtalkCallContext(callInfos);
+              _context6.next = 6;
+              return _this9.updateInteraction();
+            case 6:
+            case "end":
+              return _context6.stop();
+          }
+        }, _callee6);
+      }))();
     },
     cloudtalkCallEnded: function cloudtalkCallEnded(callInfos) {
-      this.showCloudtalkPhone();
-      this.interaction.status = "ended";
-      this.setCloudtalkCallData(callInfos);
-      this.fetchCloudtalkCallContext(callInfos);
-      this.updateInteraction();
-      this.scheduleCloudtalkHistorySync(callInfos, 1, this.cloneInteraction(this.interaction), this.interactionProspect ? this.interactionProspect.id : null);
-      if (this.interactionProspect) {
-        this.nextInteraction();
-      }
+      var _this10 = this;
+      return _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee7() {
+        return _regeneratorRuntime().wrap(function _callee7$(_context7) {
+          while (1) switch (_context7.prev = _context7.next) {
+            case 0:
+              _this10.showCloudtalkPhone();
+              _this10.interaction.status = _this10.cloudtalkCallStatus(callInfos, "ended");
+              _this10.setCloudtalkCallData(callInfos);
+              _this10.fetchCloudtalkCallContext(callInfos);
+              _context7.next = 6;
+              return _this10.updateInteraction();
+            case 6:
+              _this10.scheduleCloudtalkHistorySync(callInfos, 1, _this10.cloneInteraction(_this10.interaction), _this10.interactionProspect ? _this10.interactionProspect.id : null);
+            case 7:
+            case "end":
+              return _context7.stop();
+          }
+        }, _callee7);
+      }))();
     },
     cloudtalkCallContactInfo: function cloudtalkCallContactInfo(callInfos) {
       this.fetchCloudtalkCallContext(callInfos);
     },
     createCloudtalkProspect: function createCloudtalkProspect() {
-      var _this9 = this;
-      return _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee6() {
+      var _this11 = this;
+      return _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee8() {
         var number, prospect;
-        return _regeneratorRuntime().wrap(function _callee6$(_context6) {
-          while (1) switch (_context6.prev = _context6.next) {
+        return _regeneratorRuntime().wrap(function _callee8$(_context8) {
+          while (1) switch (_context8.prev = _context8.next) {
             case 0:
-              number = _this9.cloudtalkLookup && _this9.cloudtalkLookup.number ? _this9.cloudtalkLookup.number : _this9.interaction.number;
-              if (!(!number || _this9.cloudtalkCreatingProspect)) {
-                _context6.next = 3;
+              number = _this11.cloudtalkLookup && _this11.cloudtalkLookup.number ? _this11.cloudtalkLookup.number : _this11.interaction.number;
+              if (!(!number || _this11.cloudtalkCreatingProspect)) {
+                _context8.next = 3;
                 break;
               }
-              return _context6.abrupt("return");
+              return _context8.abrupt("return");
             case 3:
-              _this9.cloudtalkCreatingProspect = true;
-              _context6.prev = 4;
-              _context6.next = 7;
+              _this11.cloudtalkCreatingProspect = true;
+              _context8.prev = 4;
+              _context8.next = 7;
               return _store__WEBPACK_IMPORTED_MODULE_0__["default"].dispatch(_actions_project_prospect__WEBPACK_IMPORTED_MODULE_7__.ADD_PROSPECT, {
                 mobile_phone_number: number
               });
             case 7:
-              prospect = _context6.sent;
-              _this9.setActiveInteractionProspect(prospect);
-              _this9.cloudtalkLookup = _objectSpread(_objectSpread({}, _this9.cloudtalkLookup), {}, {
+              prospect = _context8.sent;
+              _this11.setActiveInteractionProspect(prospect);
+              _this11.cloudtalkLookup = _objectSpread(_objectSpread({}, _this11.cloudtalkLookup), {}, {
                 number: number,
-                numberKey: _this9.normalizePhone(number),
+                numberKey: _this11.normalizePhone(number),
                 prospect: prospect,
                 threads: [],
                 messages: [],
                 resolved: true
               });
-              if (!(_this9.interaction && _this9.interaction.source == "cloudtalk" && !_this9.interaction.id)) {
-                _context6.next = 19;
+              if (!(_this11.interaction && _this11.interaction.source == "cloudtalk" && !_this11.interaction.id)) {
+                _context8.next = 19;
                 break;
               }
-              _context6.prev = 11;
-              _context6.next = 14;
-              return _this9.addInteraction();
+              _context8.prev = 11;
+              _context8.next = 14;
+              return _this11.addInteraction();
             case 14:
-              _context6.next = 19;
+              _context8.next = 19;
               break;
             case 16:
-              _context6.prev = 16;
-              _context6.t0 = _context6["catch"](11);
-              _this9.interaction.data = _objectSpread(_objectSpread({}, _this9.interaction.data || {}), {}, {
-                error: _context6.t0.message
+              _context8.prev = 16;
+              _context8.t0 = _context8["catch"](11);
+              _this11.interaction.data = _objectSpread(_objectSpread({}, _this11.interaction.data || {}), {}, {
+                error: _context8.t0.message
               });
             case 19:
-              _context6.prev = 19;
-              _this9.cloudtalkCreatingProspect = false;
-              return _context6.finish(19);
+              _context8.prev = 19;
+              _this11.cloudtalkCreatingProspect = false;
+              return _context8.finish(19);
             case 22:
             case "end":
-              return _context6.stop();
+              return _context8.stop();
           }
-        }, _callee6, null, [[4,, 19, 22], [11, 16]]);
+        }, _callee8, null, [[4,, 19, 22], [11, 16]]);
       }))();
     },
     setCloudtalkCallData: function setCloudtalkCallData() {
       var callInfos = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
       var callId = this.cloudtalkCallId(callInfos);
       var number = this.cloudtalkCallNumber(callInfos, true);
+      var direction = this.cloudtalkCallDirection(callInfos);
+      var status = this.cloudtalkCallStatus(callInfos, "");
       var recordingUrl = callInfos.recording_url || callInfos.recording || callInfos.recording_link || "";
+      var voicemailUrl = callInfos.voicemail_url || callInfos.voicemail_link || callInfos.voicemail_recording_link || "";
       if (number) {
         this.interaction.number = number;
+      }
+      if (direction) {
+        this.interaction.from_user = direction != "incoming";
+      }
+      if (callInfos.internal_number) {
+        this.interaction.from_number = callInfos.internal_number;
       }
       if (callInfos.started_at || callInfos.startedAt) {
         this.interaction.started_at = callInfos.started_at || callInfos.startedAt;
@@ -31097,7 +31225,7 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
       if (callInfos.ended_at || callInfos.endedAt) {
         this.interaction.ended_at = callInfos.ended_at || callInfos.endedAt;
       }
-      this.interaction.data = _objectSpread(_objectSpread(_objectSpread(_objectSpread(_objectSpread(_objectSpread(_objectSpread({}, this.interaction.data || {}), callId ? {
+      this.interaction.data = _objectSpread(_objectSpread(_objectSpread(_objectSpread(_objectSpread(_objectSpread(_objectSpread(_objectSpread(_objectSpread(_objectSpread(_objectSpread(_objectSpread({}, this.interaction.data || {}), callId ? {
         id: callId,
         call_id: callId
       } : {}), callInfos.call_uuid ? {
@@ -31106,11 +31234,70 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
         external_number: number
       } : {}), callInfos.direction ? {
         direction: callInfos.direction
+      } : {}), direction ? {
+        direction: direction
+      } : {}), status ? {
+        outcome: status
       } : {}), recordingUrl ? {
         recording_url: recordingUrl
+      } : {}), voicemailUrl ? {
+        voicemail_url: voicemailUrl
+      } : {}), status == "missed" ? {
+        missed_call: true
+      } : {}), status == "voicemail" ? {
+        has_voicemail: true
       } : {}), callInfos.recorded !== undefined ? {
         recorded: callInfos.recorded
       } : {});
+    },
+    cloudtalkCallDirection: function cloudtalkCallDirection() {
+      var _callInfos$data, _callInfos$data2, _callInfos$cloudtalk_, _callInfos$cloudtalk_2;
+      var callInfos = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+      var fallback = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+      var direction = String(callInfos.direction || callInfos.type || callInfos.call_type || ((_callInfos$data = callInfos.data) === null || _callInfos$data === void 0 ? void 0 : _callInfos$data.direction) || ((_callInfos$data2 = callInfos.data) === null || _callInfos$data2 === void 0 ? void 0 : _callInfos$data2.type) || ((_callInfos$cloudtalk_ = callInfos.cloudtalk_call) === null || _callInfos$cloudtalk_ === void 0 ? void 0 : _callInfos$cloudtalk_.direction) || ((_callInfos$cloudtalk_2 = callInfos.cloudtalk_call) === null || _callInfos$cloudtalk_2 === void 0 ? void 0 : _callInfos$cloudtalk_2.type) || fallback || "").toLowerCase();
+      if (["inbound", "incoming", "in"].includes(direction)) {
+        return "incoming";
+      }
+      if (["outbound", "outgoing", "out"].includes(direction)) {
+        return "outgoing";
+      }
+      return "";
+    },
+    cloudtalkCallStatus: function cloudtalkCallStatus() {
+      var _callInfos$data3;
+      var callInfos = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+      var fallback = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+      var status = String(callInfos.status || callInfos.outcome || callInfos.result || callInfos.disposition || ((_callInfos$data3 = callInfos.data) === null || _callInfos$data3 === void 0 ? void 0 : _callInfos$data3.status) || callInfos.cloudtalk_status || "").toLowerCase();
+      if (this.cloudtalkCallHasVoicemail(callInfos) || ["voicemail", "voice_mail", "voice mail", "messagerie"].some(function (value) {
+        return status.includes(value);
+      })) {
+        return "voicemail";
+      }
+      if (["missed", "no_answer", "not_answered", "unanswered", "abandoned", "lost"].some(function (value) {
+        return status.includes(value);
+      })) {
+        return "missed";
+      }
+      if (this.cloudtalkCallDirection(callInfos) == "incoming" && !callInfos.answered_at && !this.hasCloudtalkPositiveDuration(callInfos.talking_time) && ["busy", "failed", "reject", "cancel"].some(function (value) {
+        return status.includes(value);
+      })) {
+        return "missed";
+      }
+      return fallback;
+    },
+    cloudtalkCallHasVoicemail: function cloudtalkCallHasVoicemail() {
+      var _callInfos$data4, _callInfos$cloudtalk_3, _callInfos$data5, _callInfos$cloudtalk_4;
+      var callInfos = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+      if (callInfos.voicemail_url || callInfos.voicemail_link || callInfos.voicemail_recording_link || (_callInfos$data4 = callInfos.data) !== null && _callInfos$data4 !== void 0 && _callInfos$data4.voicemail_url || (_callInfos$cloudtalk_3 = callInfos.cloudtalk_call) !== null && _callInfos$cloudtalk_3 !== void 0 && _callInfos$cloudtalk_3.voicemail_url) {
+        return true;
+      }
+      return [callInfos.has_voicemail, callInfos.voicemail, callInfos.is_voicemail, (_callInfos$data5 = callInfos.data) === null || _callInfos$data5 === void 0 ? void 0 : _callInfos$data5.has_voicemail, (_callInfos$cloudtalk_4 = callInfos.cloudtalk_call) === null || _callInfos$cloudtalk_4 === void 0 ? void 0 : _callInfos$cloudtalk_4.has_voicemail].some(function (value) {
+        return [true, 1, "1", "true", "yes"].includes(typeof value == "string" ? value.toLowerCase() : value);
+      });
+    },
+    hasCloudtalkPositiveDuration: function hasCloudtalkPositiveDuration(value) {
+      var duration = Number(value);
+      return !Number.isNaN(duration) && duration > 0;
     },
     cloudtalkCallId: function cloudtalkCallId() {
       var callInfos = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
@@ -31119,7 +31306,7 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
       var data = callInfos.data || responseData.data || {};
       var call = callInfos.call || responseData.call || data.call || {};
       var cloudtalkCall = callInfos.cloudtalk_call || responseData.cloudtalk_call || data.cloudtalk_call || {};
-      return callInfos.call_uuid || callInfos.call_id || callInfos.cdr_id || callInfos.id || data.call_uuid || data.call_id || data.cdr_id || data.id || call.call_uuid || call.call_id || call.cdr_id || call.id || cloudtalkCall.call_uuid || cloudtalkCall.call_id || cloudtalkCall.cdr_id || cloudtalkCall.id || responseData.call_uuid || responseData.call_id || responseData.cdr_id || responseData.id || (useFallback && this.interaction && this.interaction.data && (this.interaction.data.call_id || this.interaction.data.cdr_id || this.interaction.data.id) ? this.interaction.data.call_id || this.interaction.data.cdr_id || this.interaction.data.id : "") || "";
+      return callInfos.uuid || callInfos.call_uuid || callInfos.call_id || callInfos.cdr_id || callInfos.id || data.uuid || data.call_uuid || data.call_id || data.cdr_id || data.id || call.uuid || call.call_uuid || call.call_id || call.cdr_id || call.id || cloudtalkCall.uuid || cloudtalkCall.call_uuid || cloudtalkCall.call_id || cloudtalkCall.cdr_id || cloudtalkCall.id || responseData.call_uuid || responseData.call_id || responseData.cdr_id || responseData.id || (useFallback && this.interaction && this.interaction.data && (this.interaction.data.call_id || this.interaction.data.cdr_id || this.interaction.data.id) ? this.interaction.data.call_id || this.interaction.data.cdr_id || this.interaction.data.id : "") || "";
     },
     /**
      * Number already attached to the call handled by the interaction.
@@ -31132,12 +31319,36 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
       if (!this.interaction || this.interaction.source != "cloudtalk" || !this.interaction.number) {
         return "";
       }
-      var currentCallId = this.interaction.data && (this.interaction.data.call_id || this.interaction.data.cdr_id || this.interaction.data.id) || "";
-      var eventCallId = this.cloudtalkCallId(callInfos, false);
-      if (currentCallId && eventCallId && currentCallId != eventCallId) {
+      if (!this.isCurrentCloudtalkInteractionEvent(callInfos)) {
         return "";
       }
       return this.interaction.number;
+    },
+    isCurrentCloudtalkInteractionEvent: function isCurrentCloudtalkInteractionEvent() {
+      var callInfos = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+      if (!this.interaction || this.interaction.source != "cloudtalk") {
+        return false;
+      }
+      var eventCallId = this.cloudtalkCallId(callInfos, false);
+      var normalizedEventCallId = eventCallId ? String(eventCallId) : "";
+      var currentCallIds = this.currentCloudtalkCallIds();
+      if (!normalizedEventCallId || currentCallIds.includes(normalizedEventCallId)) {
+        return true;
+      }
+
+      // The iframe can emit a UUID while the REST make-call response has
+      // not yet linked that UUID to the CRM interaction. The first iframe
+      // event after the click still belongs to the current CRM call.
+      return this.callingCloudtalk || this.cloudtalkWaitingForEvent;
+    },
+    currentCloudtalkCallIds: function currentCloudtalkCallIds() {
+      var _data$cloudtalk, _data$cloudtalk2, _data$cloudtalk3, _data$cloudtalk4, _data$cloudtalk5, _data$cloudtalk_call, _data$cloudtalk_call2, _data$cloudtalk_call3, _data$cloudtalk_call4, _data$cloudtalk_call5;
+      var data = this.interaction && this.interaction.data ? this.interaction.data : {};
+      return [data.uuid, data.call_uuid, data.call_id, data.cdr_id, data.id, (_data$cloudtalk = data.cloudtalk) === null || _data$cloudtalk === void 0 ? void 0 : _data$cloudtalk.uuid, (_data$cloudtalk2 = data.cloudtalk) === null || _data$cloudtalk2 === void 0 ? void 0 : _data$cloudtalk2.call_uuid, (_data$cloudtalk3 = data.cloudtalk) === null || _data$cloudtalk3 === void 0 ? void 0 : _data$cloudtalk3.call_id, (_data$cloudtalk4 = data.cloudtalk) === null || _data$cloudtalk4 === void 0 ? void 0 : _data$cloudtalk4.cdr_id, (_data$cloudtalk5 = data.cloudtalk) === null || _data$cloudtalk5 === void 0 ? void 0 : _data$cloudtalk5.id, (_data$cloudtalk_call = data.cloudtalk_call) === null || _data$cloudtalk_call === void 0 ? void 0 : _data$cloudtalk_call.uuid, (_data$cloudtalk_call2 = data.cloudtalk_call) === null || _data$cloudtalk_call2 === void 0 ? void 0 : _data$cloudtalk_call2.call_uuid, (_data$cloudtalk_call3 = data.cloudtalk_call) === null || _data$cloudtalk_call3 === void 0 ? void 0 : _data$cloudtalk_call3.call_id, (_data$cloudtalk_call4 = data.cloudtalk_call) === null || _data$cloudtalk_call4 === void 0 ? void 0 : _data$cloudtalk_call4.cdr_id, (_data$cloudtalk_call5 = data.cloudtalk_call) === null || _data$cloudtalk_call5 === void 0 ? void 0 : _data$cloudtalk_call5.id].filter(function (value) {
+        return value !== undefined && value !== null && value !== "";
+      }).map(function (value) {
+        return String(value);
+      });
     },
     cloudtalkCallNumber: function cloudtalkCallNumber() {
       var callInfos = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
@@ -31161,68 +31372,76 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
     },
     cloudtalkCandidateNumber: function cloudtalkCandidateNumber() {
       var callInfos = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-      return callInfos.external_number || callInfos.customer_number || callInfos.contact_phone || callInfos.phone_number || callInfos.number || callInfos.from || callInfos.to || "";
+      var directNumber = callInfos.customer_number || callInfos.contact_phone || callInfos.phone_number || callInfos.number || (this.cloudtalkCallDirection(callInfos) == "outgoing" ? callInfos.to : callInfos.from) || callInfos.from || callInfos.to || "";
+      if (directNumber) {
+        return directNumber;
+      }
+
+      // In the CloudTalk iframe message payload, external_number can be
+      // a CloudTalk-side identifier/line number, not the called person.
+      // Only trust it when it is not paired with internal_number.
+      return callInfos.internal_number ? "" : callInfos.external_number || "";
     },
     fetchCloudtalkCallContext: function fetchCloudtalkCallContext() {
       var _arguments = arguments,
-        _this10 = this;
-      return _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee7() {
+        _this12 = this;
+      return _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee9() {
         var callInfos, number, numberKey, callId, previousLookup, sameResolvedCall, request, data;
-        return _regeneratorRuntime().wrap(function _callee7$(_context7) {
-          while (1) switch (_context7.prev = _context7.next) {
+        return _regeneratorRuntime().wrap(function _callee9$(_context9) {
+          while (1) switch (_context9.prev = _context9.next) {
             case 0:
               callInfos = _arguments.length > 0 && _arguments[0] !== undefined ? _arguments[0] : {};
-              number = _this10.cloudtalkCallNumber(callInfos, true);
-              numberKey = _this10.normalizePhone(number);
-              callId = _this10.cloudtalkCallId(callInfos, true);
-              previousLookup = _objectSpread({}, _this10.cloudtalkLookup || {});
+              number = _this12.cloudtalkCallNumber(callInfos, true);
+              numberKey = _this12.normalizePhone(number);
+              callId = _this12.cloudtalkCallId(callInfos, true);
+              previousLookup = _objectSpread({}, _this12.cloudtalkLookup || {});
               sameResolvedCall = previousLookup.prospect && previousLookup.callId && callId && previousLookup.callId == callId;
               if (!(!numberKey || numberKey.length < 6)) {
-                _context7.next = 8;
+                _context9.next = 8;
                 break;
               }
-              return _context7.abrupt("return");
+              return _context9.abrupt("return");
             case 8:
-              if (!(_this10.cloudtalkLookup.numberKey == numberKey && (_this10.cloudtalkLookup.resolved || _this10.cloudtalkLookupLoading))) {
-                _context7.next = 10;
+              if (!(_this12.cloudtalkLookup.numberKey == numberKey && (_this12.cloudtalkLookup.resolved || _this12.cloudtalkLookupLoading))) {
+                _context9.next = 10;
                 break;
               }
-              return _context7.abrupt("return");
+              return _context9.abrupt("return");
             case 10:
-              request = ++_this10.cloudtalkLookupRequest;
-              _this10.cloudtalkLookupLoading = true;
-              _this10.cloudtalkLookup = _objectSpread(_objectSpread({}, _this10.cloudtalkLookup), {}, {
+              request = ++_this12.cloudtalkLookupRequest;
+              _this12.cloudtalkLookupLoading = true;
+              _this12.cloudtalkLookup = _objectSpread(_objectSpread({}, _this12.cloudtalkLookup), {}, {
                 number: number,
                 numberKey: numberKey,
                 callId: callId,
                 resolved: false
               });
-              _context7.prev = 13;
-              _context7.next = 16;
+              _context9.prev = 13;
+              _context9.next = 16;
               return _store__WEBPACK_IMPORTED_MODULE_0__["default"].dispatch(_actions_project_line__WEBPACK_IMPORTED_MODULE_10__.LOOKUP_CLOUDTALK_CALL, {
                 number: number
               });
             case 16:
-              data = _context7.sent;
-              if (!(request != _this10.cloudtalkLookupRequest)) {
-                _context7.next = 19;
+              data = _context9.sent;
+              if (!(request != _this12.cloudtalkLookupRequest)) {
+                _context9.next = 19;
                 break;
               }
-              return _context7.abrupt("return");
+              return _context9.abrupt("return");
             case 19:
               if (!(!data.prospect && sameResolvedCall)) {
-                _context7.next = 22;
+                _context9.next = 22;
                 break;
               }
-              _this10.cloudtalkLookup = _objectSpread(_objectSpread({}, previousLookup), {}, {
+              _this12.cloudtalkLookup = _objectSpread(_objectSpread({}, previousLookup), {}, {
                 number: previousLookup.number || data.number || number,
                 numberKey: previousLookup.numberKey || numberKey,
                 callId: callId,
                 resolved: true
               });
-              return _context7.abrupt("return");
+              return _context9.abrupt("return");
             case 22:
-              _this10.cloudtalkLookup = {
+              _this12.cloudtalkLookup = {
                 number: data.number || number,
                 numberKey: numberKey,
                 callId: callId,
@@ -31232,34 +31451,34 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
                 resolved: true
               };
               if (!data.prospect) {
-                _context7.next = 34;
+                _context9.next = 34;
                 break;
               }
-              _this10.setActiveInteractionProspect(data.prospect);
-              if (!(_this10.interaction && _this10.interaction.source == "cloudtalk" && !_this10.interaction.id)) {
-                _context7.next = 34;
+              _this12.setActiveInteractionProspect(data.prospect);
+              if (!(_this12.interaction && _this12.interaction.source == "cloudtalk" && !_this12.interaction.id)) {
+                _context9.next = 34;
                 break;
               }
-              _context7.prev = 26;
-              _context7.next = 29;
-              return _this10.addInteraction();
+              _context9.prev = 26;
+              _context9.next = 29;
+              return _this12.addInteraction();
             case 29:
-              _context7.next = 34;
+              _context9.next = 34;
               break;
             case 31:
-              _context7.prev = 31;
-              _context7.t0 = _context7["catch"](26);
-              _this10.interaction.data = _objectSpread(_objectSpread({}, _this10.interaction.data || {}), {}, {
-                error: _context7.t0.message
+              _context9.prev = 31;
+              _context9.t0 = _context9["catch"](26);
+              _this12.interaction.data = _objectSpread(_objectSpread({}, _this12.interaction.data || {}), {}, {
+                error: _context9.t0.message
               });
             case 34:
-              _context7.next = 39;
+              _context9.next = 39;
               break;
             case 36:
-              _context7.prev = 36;
-              _context7.t1 = _context7["catch"](13);
-              if (request == _this10.cloudtalkLookupRequest) {
-                _this10.cloudtalkLookup = {
+              _context9.prev = 36;
+              _context9.t1 = _context9["catch"](13);
+              if (request == _this12.cloudtalkLookupRequest) {
+                _this12.cloudtalkLookup = {
                   number: number,
                   numberKey: numberKey,
                   callId: callId,
@@ -31270,29 +31489,29 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
                 };
               }
             case 39:
-              _context7.prev = 39;
-              if (request == _this10.cloudtalkLookupRequest) {
-                _this10.cloudtalkLookupLoading = false;
+              _context9.prev = 39;
+              if (request == _this12.cloudtalkLookupRequest) {
+                _this12.cloudtalkLookupLoading = false;
               }
-              return _context7.finish(39);
+              return _context9.finish(39);
             case 42:
             case "end":
-              return _context7.stop();
+              return _context9.stop();
           }
-        }, _callee7, null, [[13, 36, 39, 42], [26, 31]]);
+        }, _callee9, null, [[13, 36, 39, 42], [26, 31]]);
       }))();
     },
     scheduleCloudtalkHistorySync: function scheduleCloudtalkHistorySync() {
-      var _this11 = this;
+      var _this13 = this;
       var callInfos = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
       var attempt = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1;
       var interaction = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
       var prospectId = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
       var timeout = setTimeout(function () {
-        _this11.cloudtalkHistoryTimeouts = _this11.cloudtalkHistoryTimeouts.filter(function (item) {
+        _this13.cloudtalkHistoryTimeouts = _this13.cloudtalkHistoryTimeouts.filter(function (item) {
           return item != timeout;
         });
-        _this11.syncCloudtalkCallHistory(callInfos, attempt, interaction, prospectId);
+        _this13.syncCloudtalkCallHistory(callInfos, attempt, interaction, prospectId);
       }, attempt == 1 ? 3000 : 8000);
       this.cloudtalkHistoryTimeouts.push(timeout);
     },
@@ -31304,103 +31523,162 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
     },
     syncCloudtalkCallHistory: function syncCloudtalkCallHistory() {
       var _arguments2 = arguments,
-        _this12 = this;
-      return _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee8() {
-        var callInfos, attempt, interaction, prospectId, targetInteraction, targetProspectId, number, callId, params, data, updatedInteraction, _yield$ProspectIntera, savedInteraction;
-        return _regeneratorRuntime().wrap(function _callee8$(_context8) {
-          while (1) switch (_context8.prev = _context8.next) {
+        _this14 = this;
+      return _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee10() {
+        var callInfos, attempt, interaction, prospectId, targetInteraction, targetProspectId, number, callId, params, data, updatedInteraction, _yield$ProspectIntera, savedInteraction, _yield$ProspectIntera2, _savedInteraction;
+        return _regeneratorRuntime().wrap(function _callee10$(_context10) {
+          while (1) switch (_context10.prev = _context10.next) {
             case 0:
               callInfos = _arguments2.length > 0 && _arguments2[0] !== undefined ? _arguments2[0] : {};
               attempt = _arguments2.length > 1 && _arguments2[1] !== undefined ? _arguments2[1] : 1;
               interaction = _arguments2.length > 2 && _arguments2[2] !== undefined ? _arguments2[2] : null;
               prospectId = _arguments2.length > 3 && _arguments2[3] !== undefined ? _arguments2[3] : null;
-              targetInteraction = interaction || _this12.interaction;
-              targetProspectId = prospectId || (_this12.interactionProspect ? _this12.interactionProspect.id : null);
-              if (!(!targetInteraction || targetInteraction.source != "cloudtalk" || !targetProspectId)) {
-                _context8.next = 8;
+              targetInteraction = interaction || _this14.interaction;
+              targetProspectId = prospectId || targetInteraction.prospect_id || (_this14.interactionProspect ? _this14.interactionProspect.id : null);
+              if (!(!targetInteraction || targetInteraction.source != "cloudtalk")) {
+                _context10.next = 8;
                 break;
               }
-              return _context8.abrupt("return");
+              return _context10.abrupt("return");
             case 8:
-              number = _this12.cloudtalkCallNumber(callInfos, false) || targetInteraction.number;
-              callId = _this12.cloudtalkCallId(callInfos, false) || (targetInteraction.data || {}).call_id || (targetInteraction.data || {}).cdr_id || (targetInteraction.data || {}).id;
+              number = _this14.cloudtalkCallNumber(callInfos, false) || targetInteraction.number;
+              callId = _this14.cloudtalkCallId(callInfos, false) || (targetInteraction.data || {}).call_id || (targetInteraction.data || {}).cdr_id || (targetInteraction.data || {}).id;
               params = {
                 number: number,
                 call_id: callId,
                 started_at: targetInteraction.started_at,
                 ended_at: targetInteraction.ended_at,
-                direction: callInfos.direction || (targetInteraction.data || {}).direction || null
+                direction: callInfos.direction || callInfos.type || (targetInteraction.data || {}).direction || null
               };
-              if (_this12.cloudtalkLine) {
-                params.line_id = _this12.cloudtalkLine.id;
+              if (!(!params.number && !params.call_id)) {
+                _context10.next = 13;
+                break;
               }
-              _context8.prev = 12;
-              _context8.next = 15;
+              return _context10.abrupt("return");
+            case 13:
+              if (_this14.cloudtalkLine) {
+                params.line_id = _this14.cloudtalkLine.id;
+              }
+              _context10.prev = 14;
+              _context10.next = 17;
               return _store__WEBPACK_IMPORTED_MODULE_0__["default"].dispatch(_actions_project_line__WEBPACK_IMPORTED_MODULE_10__.FETCH_CLOUDTALK_CALL_HISTORY, params);
-            case 15:
-              data = _context8.sent;
+            case 17:
+              data = _context10.sent;
               if (data.call) {
-                _context8.next = 19;
+                _context10.next = 21;
                 break;
               }
               if (attempt < 3) {
-                _this12.scheduleCloudtalkHistorySync(callInfos, attempt + 1, targetInteraction, targetProspectId);
+                _this14.scheduleCloudtalkHistorySync(callInfos, attempt + 1, targetInteraction, targetProspectId);
               }
-              return _context8.abrupt("return");
-            case 19:
-              updatedInteraction = _this12.applyCloudtalkHistory(data.call, targetInteraction);
-              if (!updatedInteraction.id) {
-                _context8.next = 29;
+              return _context10.abrupt("return");
+            case 21:
+              updatedInteraction = _this14.applyCloudtalkHistory(data.call, targetInteraction);
+              if (targetProspectId) {
+                _context10.next = 27;
                 break;
               }
-              _context8.next = 23;
-              return _apis_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_5__["default"].update(_this12.project.slug, targetProspectId, updatedInteraction.id, updatedInteraction);
-            case 23:
-              _yield$ProspectIntera = _context8.sent;
-              savedInteraction = _yield$ProspectIntera.data;
-              if (_this12.interaction && _this12.interaction.id == updatedInteraction.id) {
-                _this12.interaction = savedInteraction;
+              _context10.next = 25;
+              return _this14.fetchCloudtalkCallContext(data.call);
+            case 25:
+              targetProspectId = targetInteraction.prospect_id || (_this14.interactionProspect ? _this14.interactionProspect.id : null);
+              if (!updatedInteraction.id && _this14.interaction && _this14.interaction.id && _this14.isCurrentCloudtalkInteractionEvent(data.call)) {
+                updatedInteraction.id = _this14.interaction.id;
               }
-              if (!(_this12.interactionProspect && _this12.interactionProspect.id == targetProspectId)) {
-                _context8.next = 29;
+            case 27:
+              if (targetProspectId) {
+                _context10.next = 29;
                 break;
               }
-              _context8.next = 29;
-              return _this12.fetchInteractions();
+              return _context10.abrupt("return");
             case 29:
-              _context8.next = 34;
-              break;
-            case 31:
-              _context8.prev = 31;
-              _context8.t0 = _context8["catch"](12);
-              if (attempt < 3) {
-                _this12.scheduleCloudtalkHistorySync(callInfos, attempt + 1, targetInteraction, targetProspectId);
+              if (updatedInteraction.id) {
+                _context10.next = 39;
+                break;
               }
-            case 34:
+              _context10.next = 32;
+              return _apis_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_5__["default"].create(_this14.project.slug, targetProspectId, updatedInteraction);
+            case 32:
+              _yield$ProspectIntera = _context10.sent;
+              savedInteraction = _yield$ProspectIntera.data;
+              if (_this14.isCurrentCloudtalkInteractionEvent(data.call)) {
+                _this14.interaction = savedInteraction;
+              }
+              if (!(_this14.interactionProspect && _this14.interactionProspect.id == targetProspectId)) {
+                _context10.next = 38;
+                break;
+              }
+              _context10.next = 38;
+              return _this14.fetchInteractions();
+            case 38:
+              return _context10.abrupt("return");
+            case 39:
+              if (!updatedInteraction.id) {
+                _context10.next = 48;
+                break;
+              }
+              _context10.next = 42;
+              return _apis_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_5__["default"].update(_this14.project.slug, targetProspectId, updatedInteraction.id, updatedInteraction);
+            case 42:
+              _yield$ProspectIntera2 = _context10.sent;
+              _savedInteraction = _yield$ProspectIntera2.data;
+              if (_this14.interaction && _this14.interaction.id == updatedInteraction.id) {
+                _this14.interaction = _savedInteraction;
+              }
+              if (!(_this14.interactionProspect && _this14.interactionProspect.id == targetProspectId)) {
+                _context10.next = 48;
+                break;
+              }
+              _context10.next = 48;
+              return _this14.fetchInteractions();
+            case 48:
+              _context10.next = 53;
+              break;
+            case 50:
+              _context10.prev = 50;
+              _context10.t0 = _context10["catch"](14);
+              if (attempt < 3) {
+                _this14.scheduleCloudtalkHistorySync(callInfos, attempt + 1, targetInteraction, targetProspectId);
+              }
+            case 53:
             case "end":
-              return _context8.stop();
+              return _context10.stop();
           }
-        }, _callee8, null, [[12, 31]]);
+        }, _callee10, null, [[14, 50]]);
       }))();
     },
     applyCloudtalkHistory: function applyCloudtalkHistory(call) {
       var interaction = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
       var targetInteraction = interaction || this.interaction;
       var existingData = targetInteraction.data || {};
-      targetInteraction.data = _objectSpread(_objectSpread({}, existingData), {}, {
+      var direction = this.cloudtalkCallDirection(call, existingData.direction || "");
+      var status = this.cloudtalkCallStatus(call, call.status || targetInteraction.status);
+      targetInteraction.data = _objectSpread(_objectSpread(_objectSpread(_objectSpread({}, existingData), {}, {
         call_id: call.id,
         cdr_id: call.id,
+        direction: direction || existingData.direction,
+        outcome: status || existingData.outcome,
         recorded: call.recorded,
         recording_url: call.recording_url || existingData.recording_url,
         recording_link: call.recording_link || existingData.recording_link,
+        voicemail_link: call.voicemail_link || existingData.voicemail_link
+      }, call.missed ? {
+        missed_call: true
+      } : {}), call.has_voicemail ? {
+        has_voicemail: true
+      } : {}), {}, {
         cloudtalk_call: call,
         cloudtalk_history: call.raw
       });
       targetInteraction.number = call.number || targetInteraction.number || "";
+      targetInteraction.prospect_id = targetInteraction.prospect_id || call.prospect_id || null;
       targetInteraction.from_number = call.from_number || targetInteraction.from_number || "";
+      if (direction) {
+        targetInteraction.from_user = direction != "incoming";
+      }
       targetInteraction.started_at = call.started_at || targetInteraction.started_at || null;
       targetInteraction.ended_at = call.ended_at || targetInteraction.ended_at || null;
-      targetInteraction.status = call.status || targetInteraction.status;
+      targetInteraction.status = status || targetInteraction.status;
       return targetInteraction;
     },
     cloneInteraction: function cloneInteraction(interaction) {
@@ -31416,7 +31694,7 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
     },
     isCloudtalkIncomingCall: function isCloudtalkIncomingCall() {
       var callInfos = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-      return ["inbound", "incoming"].includes(String(callInfos.direction || callInfos.type || "").toLowerCase());
+      return this.cloudtalkCallDirection(callInfos) == "incoming";
     },
     syncIncomingCloudtalkProspect: function syncIncomingCloudtalkProspect() {
       var callInfos = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
@@ -31469,66 +31747,82 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
      *
      */
     addInteraction: function addInteraction() {
-      var _this13 = this;
-      return _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee9() {
-        return _regeneratorRuntime().wrap(function _callee9$(_context9) {
-          while (1) switch (_context9.prev = _context9.next) {
+      var _this15 = this;
+      return _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee11() {
+        return _regeneratorRuntime().wrap(function _callee11$(_context11) {
+          while (1) switch (_context11.prev = _context11.next) {
             case 0:
-              _this13.addingInteraction = true;
-              _context9.prev = 1;
-              _context9.next = 4;
-              return _store__WEBPACK_IMPORTED_MODULE_0__["default"].dispatch(_actions_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_8__.ADD_PROSPECT_INTERACTION, _this13.interaction);
+              _this15.addingInteraction = true;
+              _context11.prev = 1;
+              _context11.next = 4;
+              return _store__WEBPACK_IMPORTED_MODULE_0__["default"].dispatch(_actions_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_8__.ADD_PROSPECT_INTERACTION, _this15.interaction);
             case 4:
-              _this13.interaction = _context9.sent;
+              _this15.interaction = _context11.sent;
             case 5:
-              _context9.prev = 5;
-              _this13.addingInteraction = false;
-              return _context9.finish(5);
+              _context11.prev = 5;
+              _this15.addingInteraction = false;
+              return _context11.finish(5);
             case 8:
             case "end":
-              return _context9.stop();
+              return _context11.stop();
           }
-        }, _callee9, null, [[1,, 5, 8]]);
+        }, _callee11, null, [[1,, 5, 8]]);
       }))();
     },
     /**
      *
      */
     updateInteraction: function updateInteraction() {
-      var _this14 = this;
-      return _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee10() {
-        return _regeneratorRuntime().wrap(function _callee10$(_context10) {
-          while (1) switch (_context10.prev = _context10.next) {
+      var _this16 = this;
+      return _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee12() {
+        return _regeneratorRuntime().wrap(function _callee12$(_context12) {
+          while (1) switch (_context12.prev = _context12.next) {
             case 0:
-              if (!(!_this14.interaction || !_this14.interactionProspect)) {
-                _context10.next = 2;
+              if (_this16.interaction) {
+                _context12.next = 2;
                 break;
               }
-              return _context10.abrupt("return");
+              return _context12.abrupt("return", null);
             case 2:
-              if (_this14.interaction.id) {
-                _context10.next = 7;
+              if (!_this16.interaction.prospect_id && _this16.interactionProspect) {
+                _this16.interaction.prospect_id = _this16.interactionProspect.id;
+              }
+              if (!(!_this16.interaction.prospect_id && !_this16.interactionProspect)) {
+                _context12.next = 5;
                 break;
               }
-              _context10.next = 5;
-              return _store__WEBPACK_IMPORTED_MODULE_0__["default"].dispatch(_actions_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_8__.ADD_PROSPECT_INTERACTION, _this14.interaction);
+              return _context12.abrupt("return", null);
             case 5:
-              _this14.interaction = _context10.sent;
-              return _context10.abrupt("return");
-            case 7:
-              _store__WEBPACK_IMPORTED_MODULE_0__["default"].dispatch(_actions_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_8__.UPDATE_PROSPECT_INTERACTION, _this14.interaction);
+              if (_this16.interaction.id) {
+                _context12.next = 10;
+                break;
+              }
+              _context12.next = 8;
+              return _store__WEBPACK_IMPORTED_MODULE_0__["default"].dispatch(_actions_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_8__.ADD_PROSPECT_INTERACTION, _this16.interaction);
             case 8:
+              _this16.interaction = _context12.sent;
+              return _context12.abrupt("return", _this16.interaction);
+            case 10:
+              _context12.next = 12;
+              return _store__WEBPACK_IMPORTED_MODULE_0__["default"].dispatch(_actions_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_8__.UPDATE_PROSPECT_INTERACTION, _this16.interaction);
+            case 12:
+              _this16.interaction = _context12.sent;
+              return _context12.abrupt("return", _this16.interaction);
+            case 14:
             case "end":
-              return _context10.stop();
+              return _context12.stop();
           }
-        }, _callee10);
+        }, _callee12);
       }))();
     },
     /**
      *
      */
     nextInteraction: function nextInteraction() {
-      if (this.selectedProspects.length - 1 > this["this"].currentProspectIndex) {
+      if (this.selectedProspects.length == 0) {
+        return;
+      }
+      if (this.selectedProspects.length - 1 > this.currentProspectIndex) {
         this.currentProspectIndex++;
       } else {
         this.setActiveInteractionProspect(null);
@@ -31542,94 +31836,94 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
       this.tab = 0;
     },
     updateProspectPhoneNumber: function updateProspectPhoneNumber() {
-      var _this15 = this;
-      return _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee11() {
-        return _regeneratorRuntime().wrap(function _callee11$(_context11) {
-          while (1) switch (_context11.prev = _context11.next) {
-            case 0:
-              _this15.updatingPhoneNumber = true;
-              _context11.prev = 1;
-              _context11.next = 4;
-              return _store__WEBPACK_IMPORTED_MODULE_0__["default"].dispatch(_actions_project_prospect__WEBPACK_IMPORTED_MODULE_7__.UPDATE_PROSPECT, {
-                id: _this15.interactionProspect.id,
-                phone_number: _this15.phoneNumber
-              });
-            case 4:
-              _context11.prev = 4;
-              _this15.updatingPhoneNumber = false;
-              _this15.tab = 0;
-              return _context11.finish(4);
-            case 8:
-            case "end":
-              return _context11.stop();
-          }
-        }, _callee11, null, [[1,, 4, 8]]);
-      }))();
-    },
-    updateProspectMobilePhoneNumber: function updateProspectMobilePhoneNumber() {
-      var _this16 = this;
-      return _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee12() {
-        return _regeneratorRuntime().wrap(function _callee12$(_context12) {
-          while (1) switch (_context12.prev = _context12.next) {
-            case 0:
-              _this16.updatingMobilePhoneNumber = true;
-              _context12.prev = 1;
-              _context12.next = 4;
-              return _store__WEBPACK_IMPORTED_MODULE_0__["default"].dispatch(_actions_project_prospect__WEBPACK_IMPORTED_MODULE_7__.UPDATE_PROSPECT, {
-                id: _this16.interactionProspect.id,
-                mobile_phone_number: _this16.mobilePhoneNumber
-              });
-            case 4:
-              _context12.prev = 4;
-              _this16.updatingMobilePhoneNumber = false;
-              _this16.tab = 0;
-              return _context12.finish(4);
-            case 8:
-            case "end":
-              return _context12.stop();
-          }
-        }, _callee12, null, [[1,, 4, 8]]);
-      }))();
-    },
-    fetchSelectedProspects: function fetchSelectedProspects() {
       var _this17 = this;
       return _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee13() {
-        var _yield$ProspectServic, data;
         return _regeneratorRuntime().wrap(function _callee13$(_context13) {
           while (1) switch (_context13.prev = _context13.next) {
             case 0:
-              if (!(_this17.prospectsSelected.length == 0)) {
-                _context13.next = 3;
+              _this17.updatingPhoneNumber = true;
+              _context13.prev = 1;
+              _context13.next = 4;
+              return _store__WEBPACK_IMPORTED_MODULE_0__["default"].dispatch(_actions_project_prospect__WEBPACK_IMPORTED_MODULE_7__.UPDATE_PROSPECT, {
+                id: _this17.interactionProspect.id,
+                phone_number: _this17.phoneNumber
+              });
+            case 4:
+              _context13.prev = 4;
+              _this17.updatingPhoneNumber = false;
+              _this17.tab = 0;
+              return _context13.finish(4);
+            case 8:
+            case "end":
+              return _context13.stop();
+          }
+        }, _callee13, null, [[1,, 4, 8]]);
+      }))();
+    },
+    updateProspectMobilePhoneNumber: function updateProspectMobilePhoneNumber() {
+      var _this18 = this;
+      return _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee14() {
+        return _regeneratorRuntime().wrap(function _callee14$(_context14) {
+          while (1) switch (_context14.prev = _context14.next) {
+            case 0:
+              _this18.updatingMobilePhoneNumber = true;
+              _context14.prev = 1;
+              _context14.next = 4;
+              return _store__WEBPACK_IMPORTED_MODULE_0__["default"].dispatch(_actions_project_prospect__WEBPACK_IMPORTED_MODULE_7__.UPDATE_PROSPECT, {
+                id: _this18.interactionProspect.id,
+                mobile_phone_number: _this18.mobilePhoneNumber
+              });
+            case 4:
+              _context14.prev = 4;
+              _this18.updatingMobilePhoneNumber = false;
+              _this18.tab = 0;
+              return _context14.finish(4);
+            case 8:
+            case "end":
+              return _context14.stop();
+          }
+        }, _callee14, null, [[1,, 4, 8]]);
+      }))();
+    },
+    fetchSelectedProspects: function fetchSelectedProspects() {
+      var _this19 = this;
+      return _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee15() {
+        var _yield$ProspectServic, data;
+        return _regeneratorRuntime().wrap(function _callee15$(_context15) {
+          while (1) switch (_context15.prev = _context15.next) {
+            case 0:
+              if (!(_this19.prospectsSelected.length == 0)) {
+                _context15.next = 3;
                 break;
               }
-              _this17.selectedProspects = [];
-              return _context13.abrupt("return");
+              _this19.selectedProspects = [];
+              return _context15.abrupt("return");
             case 3:
-              _context13.prev = 3;
-              _context13.next = 6;
-              return _apis_project_prospect__WEBPACK_IMPORTED_MODULE_4__["default"].get(_this17.project.slug, {
+              _context15.prev = 3;
+              _context15.next = 6;
+              return _apis_project_prospect__WEBPACK_IMPORTED_MODULE_4__["default"].get(_this19.project.slug, {
                 params: {
                   filters: JSON.stringify({
-                    ids: _this17.prospectsSelected
+                    ids: _this19.prospectsSelected
                   }),
                   fields: "first_name,last_name,phone_number,mobile_phone_number"
                 }
               });
             case 6:
-              _yield$ProspectServic = _context13.sent;
+              _yield$ProspectServic = _context15.sent;
               data = _yield$ProspectServic.data;
-              _this17.selectedProspects = data.data.filter(function (prospect) {
+              _this19.selectedProspects = data.data.filter(function (prospect) {
                 return prospect.phone_number || prospect.mobile_phone_number;
               });
             case 9:
-              _context13.prev = 9;
-              _this17.fetchingProspect = false;
-              return _context13.finish(9);
+              _context15.prev = 9;
+              _this19.fetchingProspect = false;
+              return _context15.finish(9);
             case 12:
             case "end":
-              return _context13.stop();
+              return _context15.stop();
           }
-        }, _callee13, null, [[3,, 9, 12]]);
+        }, _callee15, null, [[3,, 9, 12]]);
       }))();
     },
     /**
@@ -31649,26 +31943,26 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
   },
   watch: {
     interactionProspect: function interactionProspect(newValue, oldValue) {
-      var _this18 = this;
-      return _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee14() {
-        return _regeneratorRuntime().wrap(function _callee14$(_context14) {
-          while (1) switch (_context14.prev = _context14.next) {
+      var _this20 = this;
+      return _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee16() {
+        return _regeneratorRuntime().wrap(function _callee16$(_context16) {
+          while (1) switch (_context16.prev = _context16.next) {
             case 0:
-              if (newValue && _this18.leftSlideOpen(_this18.name)) {
-                _this18.fetchInteractions();
-                if (newValue.phone_number && (!oldValue || oldValue.phone_number == _this18.interaction.number)) {
-                  _this18.interaction.number = newValue.phone_number;
+              if (newValue && _this20.leftSlideOpen(_this20.name)) {
+                _this20.fetchInteractions();
+                if (newValue.phone_number && (!oldValue || oldValue.phone_number == _this20.interaction.number)) {
+                  _this20.interaction.number = newValue.phone_number;
                 } else if (newValue.mobile_phone_number) {
                   // never clear interaction.number: it is the number used
                   // to resolve the context of the call in progress.
-                  _this18.interaction.number = newValue.mobile_phone_number;
+                  _this20.interaction.number = newValue.mobile_phone_number;
                 }
               }
             case 1:
             case "end":
-              return _context14.stop();
+              return _context16.stop();
           }
-        }, _callee14);
+        }, _callee16);
       }))();
     },
     selectedProspects: function selectedProspects() {
@@ -31681,10 +31975,10 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
       this.frameTab = this.interactionFrameTab;
     },
     currentProspect: function currentProspect(newValue) {
-      var _this19 = this;
+      var _this21 = this;
       if (newValue) {
         setTimeout(function () {
-          _this19.setActiveInteractionProspect(newValue);
+          _this21.setActiveInteractionProspect(newValue);
         }, 1000);
       }
     }
@@ -31751,9 +32045,9 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
       return this.cloudtalkLine.cloudtalk_agent_name || this.cloudtalkLine.agent_name || ((_this$cloudtalkLine$c2 = this.cloudtalkLine.config) === null || _this$cloudtalkLine$c2 === void 0 ? void 0 : _this$cloudtalkLine$c2.agent_name) || ((_this$cloudtalkLine$c3 = this.cloudtalkLine.config) === null || _this$cloudtalkLine$c3 === void 0 ? void 0 : _this$cloudtalkLine$c3.agent_label) || (agentId ? "Agent CloudTalk #" + agentId : "");
     },
     cloudtalkLine: function cloudtalkLine() {
-      var _this20 = this;
+      var _this22 = this;
       return this.lines.find(function (line) {
-        return line.operator === "cloudtalk" && _this20.user && line.user_id == _this20.user.id;
+        return line.operator === "cloudtalk" && _this22.user && line.user_id == _this22.user.id;
       });
     }
   })
@@ -31987,7 +32281,7 @@ __webpack_require__.r(__webpack_exports__);
       return String(number || "").replace(/\D+/g, "");
     }
   },
-  emits: ["make-call", "call-activity", "ringing-call", "outgoing-call", "call-ended", "hangup-call", "answered-call", "contact-info", "back", "create-prospect", "context-panel-visible"]
+  emits: ["make-call", "call-activity", "ringing-call", "outgoing-call", "call-ended", "hangup-call", "answered-call", "contact-info", "back", "login-cloudtalk", "create-prospect", "context-panel-visible"]
 });
 
 /***/ }),
@@ -80548,13 +80842,16 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var vue__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! vue */ "./node_modules/vue/dist/vue.esm-bundler.js");
 
-var _hoisted_1 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("svg", {
+var _hoisted_1 = {
+  "class": "hc-prospect-interaction-icons"
+};
+var _hoisted_2 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("svg", {
   viewBox: "0 0 40 40"
 }, [/*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("path", {
   fill: "#00B388",
   d: "M39.1,9.8c-0.9-4.5-4.5-8-9-9C27.9,0.3,24.2,0,20,0S12.1,0.3,9.9,0.8c-4.5,0.9-8,4.5-9,9 c-0.5,2.3-0.9,6-0.9,10.2c0,4.2,0.3,7.9,0.9,10.2c0.9,4.5,4.5,8,9,9C12.1,39.6,15.8,40,20,40s7.9-0.3,10.1-0.9c4.5-0.9,8-4.5,9-9 c0.5-2.3,0.9-6,0.9-10.2C39.9,15.8,39.6,12.1,39.1,9.8z M29.3,30.5C29.3,30.5,29.3,30.5,29.3,30.5c-0.7,0.3-1.9,0.5-3.5,0.6 c-0.1,0-0.1,0-0.2,0c-0.3,0-0.6-0.2-0.8-0.5c-0.4-0.9-1.2-1.6-2.2-1.8c-0.6-0.1-1.5-0.2-2.6-0.2s-2,0.1-2.6,0.2 c-1,0.2-1.8,0.9-2.2,1.8c-0.1,0.3-0.4,0.5-0.8,0.5c-0.1,0-0.2,0-0.2,0c-1.6-0.2-2.8-0.4-3.5-0.6c0,0,0,0,0,0 c-0.5-0.2-0.8-0.6-0.8-1.2c0,0,0,0,0,0c0,0,0,0,0-0.1c0,0,0,0,0,0c0,0,0,0,0,0c0.1-1.6,1.1-5.5,2.6-9.8c1.7-5,3.5-9,4.2-9.8 c0.1-0.1,0.3-0.2,0.4-0.3c0.1,0,0.1-0.1,0.2-0.1c0,0,0,0,0,0c0.5-0.2,1.5-0.3,2.6-0.3c1.1,0,2.1,0.1,2.6,0.3c0,0,0,0,0,0 c0.1,0,0.2,0.1,0.2,0.1c0.2,0.1,0.3,0.2,0.4,0.3c0,0,0,0,0,0c0.8,0.8,2.6,4.8,4.2,9.8c1.5,4.4,2.5,8.2,2.6,9.8c0,0,0,0,0,0 c0,0,0,0,0,0c0,0,0,0,0,0.1c0,0,0,0,0,0C30.1,29.8,29.8,30.3,29.3,30.5z"
 })], -1 /* HOISTED */);
-var _hoisted_2 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("svg", {
+var _hoisted_3 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("svg", {
   viewBox: "0 0 40 40"
 }, [/*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("path", {
   d: "M9.9,16.9c1.3-4.3,5.3-7.4,10.1-7.4s8.7,3.1,10.1,7.4h9.7C38.2,7.3,30,0,20,0S1.8,7.3,0.3,16.9H9.9z",
@@ -80567,24 +80864,27 @@ var _hoisted_2 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementV
     "fill": "rgb(85, 195, 192)"
   }
 })], -1 /* HOISTED */);
-var _hoisted_3 = {
+var _hoisted_4 = {
+  "class": "hc-prospect-interaction-badges"
+};
+var _hoisted_5 = {
   "class": "hc-item-main-content hc-flex-column"
 };
-var _hoisted_4 = ["textContent"];
-var _hoisted_5 = {
+var _hoisted_6 = ["textContent"];
+var _hoisted_7 = {
   "class": "hc-prospect-interaction-date"
 };
-var _hoisted_6 = ["textContent"];
-var _hoisted_7 = ["textContent"];
-var _hoisted_8 = {
+var _hoisted_8 = ["textContent"];
+var _hoisted_9 = ["textContent"];
+var _hoisted_10 = {
   "class": "hc-flex-column",
   style: {
     "align-items": "flex-end"
   }
 };
-var _hoisted_9 = ["textContent"];
-var _hoisted_10 = ["textContent"];
-var _hoisted_11 = ["src"];
+var _hoisted_11 = ["textContent"];
+var _hoisted_12 = ["textContent"];
+var _hoisted_13 = ["src"];
 function render(_ctx, _cache, $props, $setup, $data, $options) {
   var _component_icon = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveComponent)("icon");
   var _component_item = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveComponent)("item");
@@ -80592,49 +80892,67 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
     "class": (0,vue__WEBPACK_IMPORTED_MODULE_0__.normalizeClass)(['hc-prospect-interaction', 'hc-flex-row', $props.interaction.from_user ? '' : 'hc-prospect-interaction-from-prospect'])
   }, {
     "default": (0,vue__WEBPACK_IMPORTED_MODULE_0__.withCtx)(function () {
-      return [$props.interaction.source == 'aircall' ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_icon, {
-        key: 0
-      }, {
-        "default": (0,vue__WEBPACK_IMPORTED_MODULE_0__.withCtx)(function () {
-          return [_hoisted_1];
-        }),
-        _: 1 /* STABLE */
-      })) : $props.interaction.source == 'ringover' ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_icon, {
-        key: 1
+      return [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_1, [$props.interaction.source == 'aircall' ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_icon, {
+        key: 0,
+        size: 24
       }, {
         "default": (0,vue__WEBPACK_IMPORTED_MODULE_0__.withCtx)(function () {
           return [_hoisted_2];
         }),
         _: 1 /* STABLE */
+      })) : $props.interaction.source == 'ringover' ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_icon, {
+        key: 1,
+        size: 24
+      }, {
+        "default": (0,vue__WEBPACK_IMPORTED_MODULE_0__.withCtx)(function () {
+          return [_hoisted_3];
+        }),
+        _: 1 /* STABLE */
       })) : ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_icon, {
         key: 2,
-        "class": "fa fa-phone"
-      })), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_3, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
+        "class": "fa fa-phone",
+        size: 24,
+        "icon-size": 12
+      })), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_4, [$options.callDirectionIcon ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_icon, {
+        key: 0,
+        "class": (0,vue__WEBPACK_IMPORTED_MODULE_0__.normalizeClass)($options.callDirectionIcon),
+        color: $options.callDirectionColor,
+        title: $options.callDirectionTitle,
+        size: 14,
+        "icon-size": 8
+      }, null, 8 /* PROPS */, ["class", "color", "title"])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $options.callOutcomeIcon ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_icon, {
+        key: 1,
+        "class": (0,vue__WEBPACK_IMPORTED_MODULE_0__.normalizeClass)($options.callOutcomeIcon),
+        color: $options.callOutcomeColor,
+        title: $options.callOutcomeTitle,
+        size: 14,
+        "icon-size": 8
+      }, null, 8 /* PROPS */, ["class", "color", "title"])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)])]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_5, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
         "class": "hc-prospect-interaction-creator",
         textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.interaction.creator ? $props.interaction.creator.name : '(Utilisateur inconnu)')
-      }, null, 8 /* PROPS */, _hoisted_4), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_5, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
+      }, null, 8 /* PROPS */, _hoisted_6), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_7, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
         textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($options.date)
-      }, null, 8 /* PROPS */, _hoisted_6), $options.durationLabel ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("span", {
+      }, null, 8 /* PROPS */, _hoisted_8), $options.durationLabel ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("span", {
         key: 0,
         "class": "hc-prospect-interaction-duration",
         textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(' - ' + $options.durationLabel)
-      }, null, 8 /* PROPS */, _hoisted_7)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)])]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_8, [$props.interaction.number ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", {
+      }, null, 8 /* PROPS */, _hoisted_9)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)])]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_10, [$props.interaction.number ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", {
         key: 0,
         "class": "hc-prospect-interaction-number",
         textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.interaction.number)
-      }, null, 8 /* PROPS */, _hoisted_9)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $props.interaction.from_number ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", {
+      }, null, 8 /* PROPS */, _hoisted_11)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $props.interaction.from_number ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", {
         key: 1,
         "class": "hc-prospect-interaction-from-number",
         textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.interaction.from_number)
-      }, null, 8 /* PROPS */, _hoisted_10)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)]), $props.interaction.audio ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_icon, {
-        key: 3,
+      }, null, 8 /* PROPS */, _hoisted_12)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)]), $props.interaction.audio ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_icon, {
+        key: 0,
         tag: "button",
         type: "button",
         onClick: (0,vue__WEBPACK_IMPORTED_MODULE_0__.withModifiers)($options.toggleAudio, ["prevent", "stop"]),
         "class": (0,vue__WEBPACK_IMPORTED_MODULE_0__.normalizeClass)($options.audioIcon),
         title: $options.audioTitle
       }, null, 8 /* PROPS */, ["onClick", "class", "title"])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $props.interaction.audio ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("audio", {
-        key: 4,
+        key: 1,
         ref: "audio",
         src: $props.interaction.audio,
         preload: "none",
@@ -80647,7 +80965,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
         onEnded: _cache[2] || (_cache[2] = function ($event) {
           return $data.playingAudio = false;
         })
-      }, null, 40 /* PROPS, HYDRATE_EVENTS */, _hoisted_11)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)];
+      }, null, 40 /* PROPS, HYDRATE_EVENTS */, _hoisted_13)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)];
     }),
     _: 1 /* STABLE */
   }, 8 /* PROPS */, ["class"]);
@@ -80679,7 +80997,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
   var _component_slide = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveComponent)("slide", true);
   return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_slide, {
     name: $data.name,
-    onOpen: _cache[9] || (_cache[9] = function ($event) {
+    onOpen: _cache[8] || (_cache[8] = function ($event) {
       return $options.fetchInteractions(), $options.fetchSelectedProspects();
     }),
     onClosed: $options.resetCloudtalkSlideState,
@@ -80729,11 +81047,12 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
         onAnsweredCall: $options.cloudtalkCallAnswered,
         onContactInfo: $options.cloudtalkCallContactInfo,
         onBack: $options.backFromCloudtalk,
+        onLoginCloudtalk: $options.loginCloudtalk,
         onCreateProspect: $options.createCloudtalkProspect,
         onContextPanelVisible: _cache[0] || (_cache[0] = function ($event) {
           return $data.cloudtalkContextPanelVisible = $event;
         })
-      }, null, 8 /* PROPS */, ["displayed", "context-visible", "number", "calling", "loading", "agent-name", "retry-visible", "lookup-loading", "lookup-number", "prospect", "prospect-name", "project", "threads", "creating-prospect", "can-create-prospect", "messages-for-thread", "format-date", "message-preview", "onMakeCall", "onCallActivity", "onRingingCall", "onOutgoingCall", "onCallEnded", "onHangupCall", "onAnsweredCall", "onContactInfo", "onBack", "onCreateProspect"]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_tab_layout, {
+      }, null, 8 /* PROPS */, ["displayed", "context-visible", "number", "calling", "loading", "agent-name", "retry-visible", "lookup-loading", "lookup-number", "prospect", "prospect-name", "project", "threads", "creating-prospect", "can-create-prospect", "messages-for-thread", "format-date", "message-preview", "onMakeCall", "onCallActivity", "onRingingCall", "onOutgoingCall", "onCallEnded", "onHangupCall", "onAnsweredCall", "onContactInfo", "onBack", "onLoginCloudtalk", "onCreateProspect"]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_tab_layout, {
         count: 2,
         tab: $data.tab,
         "class": "hc-flex-1"
@@ -80756,13 +81075,11 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
             "aircall-webhook-url": $options.aircallWebhookURL,
             "updating-phone-number": $data.updatingPhoneNumber,
             "updating-mobile-phone-number": $data.updatingMobilePhoneNumber,
-            onBack: _cache[5] || (_cache[5] = function ($event) {
-              return $data.tab = 0;
-            }),
-            onAircallSetting: _cache[6] || (_cache[6] = function ($event) {
+            onBack: $options.backFromInteractionFrame,
+            onAircallSetting: _cache[5] || (_cache[5] = function ($event) {
               return $data.aircallTab = 1;
             }),
-            onAircallBackSetting: _cache[7] || (_cache[7] = function ($event) {
+            onAircallBackSetting: _cache[6] || (_cache[6] = function ($event) {
               return $data.aircallTab = 0;
             }),
             onCopyAircallWebhook: $options.copyAircallWebhookURLToClipboard,
@@ -80778,10 +81095,10 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
             "calling-kavkom": $data.callingViaKavkom,
             "kavkom-message": $data.kavkomCallMessage,
             "kavkom-success": $data.kavkomCallSuccess,
-            onCallKavkom: _cache[8] || (_cache[8] = function ($event) {
+            onCallKavkom: _cache[7] || (_cache[7] = function ($event) {
               return $options.triggerKavkomCall($data.interaction.number);
             })
-          }, null, 8 /* PROPS */, ["phone-number", "mobile-phone-number", "interaction-prospect", "interaction", "tab", "frame-tab", "aircall-tab", "aircall-webhook-url", "updating-phone-number", "updating-mobile-phone-number", "onCopyAircallWebhook", "onRingoverSetting", "onUpdateInteraction", "onNextInteraction", "onProspectSelected", "onUpdatePhoneNumber", "onUpdateMobilePhoneNumber", "onBackCloudtalk", "project-id", "kavkom-ready", "calling-kavkom", "kavkom-message", "kavkom-success"])];
+          }, null, 8 /* PROPS */, ["phone-number", "mobile-phone-number", "interaction-prospect", "interaction", "tab", "frame-tab", "aircall-tab", "aircall-webhook-url", "updating-phone-number", "updating-mobile-phone-number", "onBack", "onCopyAircallWebhook", "onRingoverSetting", "onUpdateInteraction", "onNextInteraction", "onProspectSelected", "onUpdatePhoneNumber", "onUpdateMobilePhoneNumber", "onBackCloudtalk", "project-id", "kavkom-ready", "calling-kavkom", "kavkom-message", "kavkom-success"])];
         }),
         _: 2 /* DYNAMIC */
       }, [_ctx.interactionProspect ? {
@@ -81077,109 +81394,115 @@ var _hoisted_3 = {
   "class": "hc-prospect-interaction-cloudtalk-retry"
 };
 var _hoisted_4 = ["textContent"];
-var _hoisted_5 = ["disabled"];
+var _hoisted_5 = {
+  "class": "hc-prospect-interaction-cloudtalk-retry-actions"
+};
 var _hoisted_6 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
+  textContent: "Se connecter a CloudTalk"
+}, null, -1 /* HOISTED */);
+var _hoisted_7 = ["disabled"];
+var _hoisted_8 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
   textContent: "Relancer l'appel"
 }, null, -1 /* HOISTED */);
-var _hoisted_7 = ["aria-expanded", "title"];
-var _hoisted_8 = {
+var _hoisted_9 = ["aria-expanded", "title"];
+var _hoisted_10 = {
   key: 2,
   "class": "hc-prospect-interaction-cloudtalk-context"
 };
-var _hoisted_9 = {
+var _hoisted_11 = {
   key: 0,
   "class": "hc-prospect-interaction-cloudtalk-context-loading"
 };
-var _hoisted_10 = {
+var _hoisted_12 = {
   "class": "hc-prospect-interaction-cloudtalk-context-header"
 };
-var _hoisted_11 = ["textContent"];
-var _hoisted_12 = ["textContent"];
-var _hoisted_13 = {
+var _hoisted_13 = ["textContent"];
+var _hoisted_14 = ["textContent"];
+var _hoisted_15 = {
   key: 0,
   "class": "hc-prospect-interaction-cloudtalk-context-section"
 };
-var _hoisted_14 = {
+var _hoisted_16 = {
   key: 0,
   "class": "hc-prospect-interaction-cloudtalk-context-heading"
 };
-var _hoisted_15 = {
+var _hoisted_17 = {
   key: 1,
   "class": "hc-prospect-interaction-cloudtalk-context-line"
 };
-var _hoisted_16 = ["textContent"];
-var _hoisted_17 = {
+var _hoisted_18 = ["textContent"];
+var _hoisted_19 = {
   key: 2,
   "class": "hc-prospect-interaction-cloudtalk-context-empty"
 };
-var _hoisted_18 = ["disabled"];
-var _hoisted_19 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
+var _hoisted_20 = ["disabled"];
+var _hoisted_21 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
   textContent: 'Creer un prospect avec ce numero'
 }, null, -1 /* HOISTED */);
-var _hoisted_20 = {
+var _hoisted_22 = {
   "class": "hc-prospect-interaction-cloudtalk-context-section"
 };
-var _hoisted_21 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
+var _hoisted_23 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
   "class": "hc-prospect-interaction-cloudtalk-context-heading"
 }, " Prospect ", -1 /* HOISTED */);
-var _hoisted_22 = {
-  key: 0,
-  "class": "hc-prospect-interaction-cloudtalk-context-line"
-};
-var _hoisted_23 = ["textContent"];
 var _hoisted_24 = {
-  key: 1,
+  key: 0,
   "class": "hc-prospect-interaction-cloudtalk-context-line"
 };
 var _hoisted_25 = ["textContent"];
 var _hoisted_26 = {
-  key: 2,
+  key: 1,
   "class": "hc-prospect-interaction-cloudtalk-context-line"
 };
 var _hoisted_27 = ["textContent"];
 var _hoisted_28 = {
+  key: 2,
+  "class": "hc-prospect-interaction-cloudtalk-context-line"
+};
+var _hoisted_29 = ["textContent"];
+var _hoisted_30 = {
   "class": "hc-prospect-interaction-cloudtalk-context-section"
 };
-var _hoisted_29 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
+var _hoisted_31 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
   "class": "hc-prospect-interaction-cloudtalk-context-heading"
 }, " information ", -1 /* HOISTED */);
-var _hoisted_30 = {
+var _hoisted_32 = {
   key: 0,
   "class": "hc-prospect-interaction-cloudtalk-context-empty"
 };
-var _hoisted_31 = {
+var _hoisted_33 = {
   "class": "hc-prospect-interaction-cloudtalk-thread-title"
 };
-var _hoisted_32 = ["textContent"];
-var _hoisted_33 = ["textContent"];
-var _hoisted_34 = {
+var _hoisted_34 = ["textContent"];
+var _hoisted_35 = ["textContent"];
+var _hoisted_36 = {
   "class": "hc-prospect-interaction-cloudtalk-message-meta"
 };
-var _hoisted_35 = ["textContent"];
-var _hoisted_36 = ["textContent"];
 var _hoisted_37 = ["textContent"];
-var _hoisted_38 = {
+var _hoisted_38 = ["textContent"];
+var _hoisted_39 = ["textContent"];
+var _hoisted_40 = {
   key: 0,
   "class": "hc-prospect-interaction-cloudtalk-message-users"
 };
-var _hoisted_39 = ["textContent"];
-var _hoisted_40 = {
+var _hoisted_41 = ["textContent"];
+var _hoisted_42 = {
   key: 2,
   "class": "hc-prospect-interaction-cloudtalk-context-section"
 };
-var _hoisted_41 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
+var _hoisted_43 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
   "class": "hc-prospect-interaction-cloudtalk-context-heading"
 }, " Numero CloudTalk ", -1 /* HOISTED */);
-var _hoisted_42 = {
+var _hoisted_44 = {
   key: 0,
   "class": "hc-prospect-interaction-cloudtalk-context-line"
 };
-var _hoisted_43 = ["textContent"];
-var _hoisted_44 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
+var _hoisted_45 = ["textContent"];
+var _hoisted_46 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
   "class": "hc-prospect-interaction-cloudtalk-context-empty"
 }, " Aucun prospect lie a ce numero. ", -1 /* HOISTED */);
-var _hoisted_45 = ["disabled"];
-var _hoisted_46 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
+var _hoisted_47 = ["disabled"];
+var _hoisted_48 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
   textContent: 'Creer un prospect avec ce numero'
 }, null, -1 /* HOISTED */);
 function render(_ctx, _cache, $props, $setup, $data, $options) {
@@ -81243,38 +81566,46 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
   }, null, 8 /* PROPS */, ["number", "calling", "loading", "agent-name"]), $props.retryVisible ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_3, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
     "class": "hc-prospect-interaction-cloudtalk-retry-title",
     textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)("L'appel CloudTalk n'est pas passe.")
-  }, null, 8 /* PROPS */, _hoisted_4), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("button", {
+  }, null, 8 /* PROPS */, _hoisted_4), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_5, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("button", {
+    type: "button",
+    "class": "hc-prospect-interaction-cloudtalk-retry-button secondary",
+    onClick: _cache[9] || (_cache[9] = function ($event) {
+      return $options.emitPanelEvent('login-cloudtalk');
+    })
+  }, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_icon, {
+    "class": "fa fa-sign-in"
+  }), _hoisted_6]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("button", {
     type: "button",
     "class": "hc-prospect-interaction-cloudtalk-retry-button",
     disabled: $props.calling || $props.loading,
-    onClick: _cache[9] || (_cache[9] = function ($event) {
+    onClick: _cache[10] || (_cache[10] = function ($event) {
       return $options.emitPanelEvent('make-call');
     })
   }, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_icon, {
     "class": "fa fa-phone"
-  }), _hoisted_6], 8 /* PROPS */, _hoisted_5)])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $props.contextVisible ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("button", {
+  }), _hoisted_8], 8 /* PROPS */, _hoisted_7)])])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $props.contextVisible ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("button", {
     key: 1,
     type: "button",
     "class": "hc-prospect-interaction-cloudtalk-context-toggle",
     "aria-expanded": $data.contextPanelVisible ? 'true' : 'false',
     title: $data.contextPanelVisible ? 'Masquer le contexte' : 'Afficher le contexte',
-    onClick: _cache[10] || (_cache[10] = function () {
+    onClick: _cache[11] || (_cache[11] = function () {
       return $options.toggleContextPanel && $options.toggleContextPanel.apply($options, arguments);
     })
   }, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_icon, {
     "class": "fa fa-caret-right"
-  })], 8 /* PROPS */, _hoisted_7)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $props.contextVisible ? (0,vue__WEBPACK_IMPORTED_MODULE_0__.withDirectives)(((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("aside", _hoisted_8, [$props.lookupLoading && !$props.prospect ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_9, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_loading, {
+  })], 8 /* PROPS */, _hoisted_9)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $props.contextVisible ? (0,vue__WEBPACK_IMPORTED_MODULE_0__.withDirectives)(((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("aside", _hoisted_10, [$props.lookupLoading && !$props.prospect ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_11, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_loading, {
     loading: $props.lookupLoading
   }, null, 8 /* PROPS */, ["loading"])])) : $props.prospect ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, {
     key: 1
-  }, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_10, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", null, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
+  }, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_12, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", null, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
     "class": "hc-prospect-interaction-cloudtalk-context-title",
     textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.prospectName)
-  }, null, 8 /* PROPS */, _hoisted_11), $props.prospect.company_name ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", {
+  }, null, 8 /* PROPS */, _hoisted_13), $props.prospect.company_name ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", {
     key: 0,
     "class": "hc-prospect-interaction-cloudtalk-context-subtitle",
     textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.prospect.company_name)
-  }, null, 8 /* PROPS */, _hoisted_12)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_router_link, {
+  }, null, 8 /* PROPS */, _hoisted_14)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_router_link, {
     "class": "hc-prospect-interaction-cloudtalk-context-link",
     to: {
       name: 'prospect.show',
@@ -81290,73 +81621,12 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
       })];
     }),
     _: 1 /* STABLE */
-  }, 8 /* PROPS */, ["to"])]), $options.shouldShowContextNumber || $options.hasDifferentContextNumber ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_13, [$options.shouldShowContextNumber ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_14, " Numero CloudTalk ")) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $options.shouldShowContextNumber ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_15, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_icon, {
+  }, 8 /* PROPS */, ["to"])]), $options.shouldShowContextNumber || $options.hasDifferentContextNumber ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_15, [$options.shouldShowContextNumber ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_16, " Numero CloudTalk ")) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $options.shouldShowContextNumber ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_17, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_icon, {
     "class": "fa fa-phone"
   }), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
     textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($options.contextNumber)
-  }, null, 8 /* PROPS */, _hoisted_16)])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $options.hasDifferentContextNumber ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_17, " Le numero CloudTalk est different du numero du prospect. ")) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $options.hasDifferentContextNumber && $props.canCreateProspect ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("button", {
+  }, null, 8 /* PROPS */, _hoisted_18)])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $options.hasDifferentContextNumber ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_19, " Le numero CloudTalk est different du numero du prospect. ")) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $options.hasDifferentContextNumber && $props.canCreateProspect ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("button", {
     key: 3,
-    type: "button",
-    "class": "hc-prospect-interaction-cloudtalk-context-button",
-    disabled: $props.creatingProspect,
-    onClick: _cache[11] || (_cache[11] = function ($event) {
-      return $options.emitPanelEvent('create-prospect');
-    })
-  }, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_icon, {
-    "class": "fa fa-plus"
-  }), _hoisted_19, (0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_loading, {
-    loading: $props.creatingProspect
-  }, null, 8 /* PROPS */, ["loading"])], 8 /* PROPS */, _hoisted_18)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_20, [_hoisted_21, $props.prospect.email ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_22, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_icon, {
-    "class": "fa fa-envelope"
-  }), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
-    textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.prospect.email)
-  }, null, 8 /* PROPS */, _hoisted_23)])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $props.prospect.phone_number ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_24, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_icon, {
-    "class": "fa fa-phone"
-  }), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
-    textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.prospect.phone_number)
-  }, null, 8 /* PROPS */, _hoisted_25)])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $props.prospect.mobile_phone_number ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_26, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_icon, {
-    "class": "fa fa-mobile"
-  }), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
-    textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.prospect.mobile_phone_number)
-  }, null, 8 /* PROPS */, _hoisted_27)])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_28, [_hoisted_29, $props.threads.length == 0 ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_30, " Aucun information lie a votre utilisateur. ")) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($props.threads, function (thread) {
-    return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", {
-      key: thread.id,
-      "class": "hc-prospect-interaction-cloudtalk-thread"
-    }, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_31, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
-      "class": "hc-prospect-interaction-cloudtalk-thread-color",
-      style: (0,vue__WEBPACK_IMPORTED_MODULE_0__.normalizeStyle)({
-        color: thread.color,
-        backgroundColor: thread.bgcolor
-      })
-    }, null, 4 /* STYLE */), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
-      textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(thread.name)
-    }, null, 8 /* PROPS */, _hoisted_32), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("small", {
-      textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(thread.user_messages_count + '/' + thread.messages_count)
-    }, null, 8 /* PROPS */, _hoisted_33)]), ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($props.messagesForThread(thread), function (message) {
-      return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", {
-        key: message.id,
-        "class": "hc-prospect-interaction-cloudtalk-message"
-      }, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_34, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
-        textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(message.creator ? message.creator.name : '')
-      }, null, 8 /* PROPS */, _hoisted_35), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
-        textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.formatDate(message.created_at))
-      }, null, 8 /* PROPS */, _hoisted_36)]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
-        "class": "hc-prospect-interaction-cloudtalk-message-body",
-        textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.messagePreview(message.body))
-      }, null, 8 /* PROPS */, _hoisted_37), message.users && message.users.length ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_38, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_icon, {
-        "class": "fa fa-user"
-      }), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
-        textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(message.users.map(function (user) {
-          return user.name;
-        }).join(', '))
-      }, null, 8 /* PROPS */, _hoisted_39)])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)]);
-    }), 128 /* KEYED_FRAGMENT */))]);
-  }), 128 /* KEYED_FRAGMENT */))])], 64 /* STABLE_FRAGMENT */)) : ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_40, [_hoisted_41, $options.contextNumber ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_42, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_icon, {
-    "class": "fa fa-phone"
-  }), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
-    textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($options.contextNumber)
-  }, null, 8 /* PROPS */, _hoisted_43)])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), _hoisted_44, $props.canCreateProspect ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("button", {
-    key: 1,
     type: "button",
     "class": "hc-prospect-interaction-cloudtalk-context-button",
     disabled: $props.creatingProspect,
@@ -81365,9 +81635,70 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
     })
   }, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_icon, {
     "class": "fa fa-plus"
-  }), _hoisted_46, (0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_loading, {
+  }), _hoisted_21, (0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_loading, {
     loading: $props.creatingProspect
-  }, null, 8 /* PROPS */, ["loading"])], 8 /* PROPS */, _hoisted_45)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)]))], 512 /* NEED_PATCH */)), [[vue__WEBPACK_IMPORTED_MODULE_0__.vShow, $data.contextPanelVisible]]) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)])], 2 /* CLASS */);
+  }, null, 8 /* PROPS */, ["loading"])], 8 /* PROPS */, _hoisted_20)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_22, [_hoisted_23, $props.prospect.email ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_24, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_icon, {
+    "class": "fa fa-envelope"
+  }), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
+    textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.prospect.email)
+  }, null, 8 /* PROPS */, _hoisted_25)])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $props.prospect.phone_number ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_26, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_icon, {
+    "class": "fa fa-phone"
+  }), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
+    textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.prospect.phone_number)
+  }, null, 8 /* PROPS */, _hoisted_27)])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $props.prospect.mobile_phone_number ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_28, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_icon, {
+    "class": "fa fa-mobile"
+  }), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
+    textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.prospect.mobile_phone_number)
+  }, null, 8 /* PROPS */, _hoisted_29)])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_30, [_hoisted_31, $props.threads.length == 0 ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_32, " Aucun information lie a votre utilisateur. ")) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($props.threads, function (thread) {
+    return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", {
+      key: thread.id,
+      "class": "hc-prospect-interaction-cloudtalk-thread"
+    }, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_33, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
+      "class": "hc-prospect-interaction-cloudtalk-thread-color",
+      style: (0,vue__WEBPACK_IMPORTED_MODULE_0__.normalizeStyle)({
+        color: thread.color,
+        backgroundColor: thread.bgcolor
+      })
+    }, null, 4 /* STYLE */), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
+      textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(thread.name)
+    }, null, 8 /* PROPS */, _hoisted_34), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("small", {
+      textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(thread.user_messages_count + '/' + thread.messages_count)
+    }, null, 8 /* PROPS */, _hoisted_35)]), ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($props.messagesForThread(thread), function (message) {
+      return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", {
+        key: message.id,
+        "class": "hc-prospect-interaction-cloudtalk-message"
+      }, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_36, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
+        textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(message.creator ? message.creator.name : '')
+      }, null, 8 /* PROPS */, _hoisted_37), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
+        textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.formatDate(message.created_at))
+      }, null, 8 /* PROPS */, _hoisted_38)]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
+        "class": "hc-prospect-interaction-cloudtalk-message-body",
+        textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.messagePreview(message.body))
+      }, null, 8 /* PROPS */, _hoisted_39), message.users && message.users.length ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_40, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_icon, {
+        "class": "fa fa-user"
+      }), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
+        textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(message.users.map(function (user) {
+          return user.name;
+        }).join(', '))
+      }, null, 8 /* PROPS */, _hoisted_41)])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)]);
+    }), 128 /* KEYED_FRAGMENT */))]);
+  }), 128 /* KEYED_FRAGMENT */))])], 64 /* STABLE_FRAGMENT */)) : ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_42, [_hoisted_43, $options.contextNumber ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_44, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_icon, {
+    "class": "fa fa-phone"
+  }), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
+    textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($options.contextNumber)
+  }, null, 8 /* PROPS */, _hoisted_45)])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), _hoisted_46, $props.canCreateProspect ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("button", {
+    key: 1,
+    type: "button",
+    "class": "hc-prospect-interaction-cloudtalk-context-button",
+    disabled: $props.creatingProspect,
+    onClick: _cache[13] || (_cache[13] = function ($event) {
+      return $options.emitPanelEvent('create-prospect');
+    })
+  }, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_icon, {
+    "class": "fa fa-plus"
+  }), _hoisted_48, (0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_loading, {
+    loading: $props.creatingProspect
+  }, null, 8 /* PROPS */, ["loading"])], 8 /* PROPS */, _hoisted_47)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)]))], 512 /* NEED_PATCH */)), [[vue__WEBPACK_IMPORTED_MODULE_0__.vShow, $data.contextPanelVisible]]) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)])], 2 /* CLASS */);
 }
 
 /***/ }),
@@ -110216,7 +110547,7 @@ __webpack_require__.r(__webpack_exports__);
 
 var ___CSS_LOADER_EXPORT___ = _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default()(function(i){return i[1]});
 // Module
-___CSS_LOADER_EXPORT___.push([module.id, "\n.hc-prospect-interaction-creator {\n    color: #333333;\n}\n.hc-prospect-interaction-date {\n    font-size: 11px;\n    color: #999999;\n}\n.hc-prospect-interaction-duration {\n    color: #666666;\n}\n.hc-prospect-interaction-number {\n    font-size: 11px;\n    color: #999999;\n}\n.hc-prospect-interaction-from-number {\n    font-size: 11px;\n    color: #7939b8;\n}\n", ""]);
+___CSS_LOADER_EXPORT___.push([module.id, "\n.hc-prospect-interaction-icons {\n    display: inline-flex;\n    align-items: center;\n    flex: 0 0 40px;\n    width: 40px;\n    gap: 2px;\n}\n.hc-prospect-interaction-badges {\n    display: flex;\n    flex-direction: column;\n    gap: 1px;\n    width: 14px;\n}\n.hc-prospect-interaction-badges .hc-icon {\n    text-shadow: none;\n}\n.hc-prospect-interaction-creator {\n    color: #333333;\n}\n.hc-prospect-interaction-date {\n    font-size: 11px;\n    color: #999999;\n}\n.hc-prospect-interaction-duration {\n    color: #666666;\n}\n.hc-prospect-interaction-number {\n    font-size: 11px;\n    color: #999999;\n}\n.hc-prospect-interaction-from-number {\n    font-size: 11px;\n    color: #7939b8;\n}\n", ""]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
@@ -110240,7 +110571,7 @@ __webpack_require__.r(__webpack_exports__);
 
 var ___CSS_LOADER_EXPORT___ = _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default()(function(i){return i[1]});
 // Module
-___CSS_LOADER_EXPORT___.push([module.id, "\n.hc-prospect-interaction-root {\n    position: relative;\n    width: 100%;\n    height: 100%;\n    overflow-y: hidden;\n}\n.hc-prospect-interaction-item {\n    padding: 4px 0 !important;\n    text-decoration: none;\n}\n.hc-prospect-interaction-item-number {\n    font-size: 11px;\n    color: #999999;\n}\n.hc-prospect-interaction-cloudtalk-panel {\n    --cloudtalk-phone-width: 300px;\n    --cloudtalk-context-width: 320px;\n    position: absolute;\n    top: 0;\n    right: 0;\n    bottom: 0;\n    left: 0;\n    z-index: 5;\n    display: flex;\n    flex-direction: column;\n    background: #ffffff;\n    opacity: 0;\n    pointer-events: none;\n    visibility: hidden;\n}\n.hc-prospect-interaction-cloudtalk-panel.with-context {\n    right: auto;\n    width: var(--cloudtalk-phone-width);\n}\n.hc-prospect-interaction-cloudtalk-panel.context-open {\n    width: calc(\n        var(--cloudtalk-phone-width) + var(--cloudtalk-context-width)\n    );\n}\n.hc-prospect-interaction-cloudtalk-panel.visible {\n    opacity: 1;\n    pointer-events: auto;\n    visibility: visible;\n}\n.hc-prospect-interaction-cloudtalk-back {\n    flex: 0 0 auto;\n}\n.hc-prospect-interaction-cloudtalk-content {\n    position: relative;\n    display: flex;\n    flex: 1 1 auto;\n    min-height: 0;\n    overflow: hidden;\n}\n.hc-prospect-interaction-cloudtalk-retry {\n    position: absolute;\n    top: 0;\n    bottom: 0;\n    left: 0;\n    z-index: 3;\n    display: flex;\n    width: var(--cloudtalk-phone-width);\n    flex-direction: column;\n    align-items: center;\n    justify-content: center;\n    gap: 10px;\n    padding: 16px;\n    background: rgba(255, 255, 255, 0.9);\n    text-align: center;\n}\n.hc-prospect-interaction-cloudtalk-retry-title {\n    font-size: 12px;\n    font-weight: 700;\n    color: #333333;\n}\n.hc-prospect-interaction-cloudtalk-retry-button {\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    gap: 8px;\n    min-height: 34px;\n    padding: 8px 12px;\n    border: 1px solid #12a0f3;\n    border-radius: 4px;\n    background: #12a0f3;\n    color: #ffffff;\n    cursor: pointer;\n    font-size: 12px;\n    font-weight: 700;\n}\n.hc-prospect-interaction-cloudtalk-retry-button:disabled {\n    border-color: #bbbbbb;\n    background: #bbbbbb;\n    cursor: wait;\n}\n.hc-prospect-interaction-cloudtalk-phone {\n    flex: 1 1 auto;\n    min-width: 0;\n}\n.hc-prospect-interaction-cloudtalk-panel.with-context\n    .hc-prospect-interaction-cloudtalk-phone {\n    flex: 0 0 var(--cloudtalk-phone-width);\n    width: var(--cloudtalk-phone-width);\n}\n.hc-prospect-interaction-cloudtalk-context-toggle {\n    position: absolute;\n    top: 50%;\n    right: 0;\n    z-index: 2;\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    width: 24px;\n    height: 42px;\n    padding: 0;\n    border: 1px solid #dddddd;\n    border-right: 0;\n    border-radius: 4px 0 0 4px;\n    background: #ffffff;\n    color: #555555;\n    cursor: pointer;\n    transform: translateY(-50%);\n}\n.hc-prospect-interaction-cloudtalk-context-toggle:hover {\n    background: #f5f5f5;\n}\n.hc-prospect-interaction-cloudtalk-panel.context-open\n    .hc-prospect-interaction-cloudtalk-context-toggle {\n    right: var(--cloudtalk-context-width);\n}\n.hc-prospect-interaction-cloudtalk-context {\n    display: flex;\n    flex: 0 0 var(--cloudtalk-context-width);\n    flex-direction: column;\n    gap: 14px;\n    height: 100%;\n    overflow: auto;\n    padding: 14px;\n    border-left: 1px solid #e5e5e5;\n    background: #fafafa;\n}\n.hc-prospect-interaction-cloudtalk-context-loading {\n    position: relative;\n    min-height: 80px;\n}\n.hc-prospect-interaction-cloudtalk-context-header {\n    display: flex;\n    align-items: flex-start;\n    justify-content: space-between;\n    gap: 10px;\n}\n.hc-prospect-interaction-cloudtalk-context-title {\n    font-size: 16px;\n    font-weight: 700;\n    line-height: 1.2;\n    color: #222222;\n    overflow-wrap: anywhere;\n}\n.hc-prospect-interaction-cloudtalk-context-subtitle {\n    margin-top: 3px;\n    font-size: 12px;\n    color: #777777;\n    overflow-wrap: anywhere;\n}\n.hc-prospect-interaction-cloudtalk-context-link {\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    width: 28px;\n    height: 28px;\n    color: #555555;\n    text-decoration: none;\n}\n.hc-prospect-interaction-cloudtalk-context-section {\n    display: flex;\n    flex-direction: column;\n    gap: 8px;\n}\n.hc-prospect-interaction-cloudtalk-context-heading {\n    font-size: 11px;\n    font-weight: 700;\n    color: #777777;\n    text-transform: uppercase;\n}\n.hc-prospect-interaction-cloudtalk-context-line {\n    display: flex;\n    align-items: center;\n    gap: 8px;\n    min-width: 0;\n    font-size: 12px;\n    color: #333333;\n}\n.hc-prospect-interaction-cloudtalk-context-line span {\n    min-width: 0;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n.hc-prospect-interaction-cloudtalk-context-empty {\n    font-size: 12px;\n    color: #999999;\n}\n.hc-prospect-interaction-cloudtalk-context-button {\n    position: relative;\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    gap: 8px;\n    min-height: 34px;\n    padding: 8px 10px;\n    border: 1px solid #dddddd;\n    border-radius: 4px;\n    background: #ffffff;\n    color: #333333;\n    cursor: pointer;\n    font-size: 12px;\n    font-weight: 600;\n}\n.hc-prospect-interaction-cloudtalk-context-button:hover {\n    background: #f5f5f5;\n}\n.hc-prospect-interaction-cloudtalk-context-button:disabled {\n    color: #999999;\n    cursor: default;\n}\n.hc-prospect-interaction-cloudtalk-thread {\n    padding: 10px;\n    border: 1px solid #e7e7e7;\n    border-radius: 6px;\n    background: #ffffff;\n}\n.hc-prospect-interaction-cloudtalk-thread-title {\n    display: flex;\n    align-items: center;\n    gap: 8px;\n    min-width: 0;\n    font-size: 13px;\n    font-weight: 700;\n    color: #222222;\n}\n.hc-prospect-interaction-cloudtalk-thread-title > span:nth-child(2) {\n    flex: 1;\n    min-width: 0;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n.hc-prospect-interaction-cloudtalk-thread-title small {\n    font-size: 11px;\n    font-weight: 600;\n    color: #777777;\n}\n.hc-prospect-interaction-cloudtalk-thread-color {\n    display: inline-block;\n    flex: 0 0 10px;\n    width: 10px;\n    height: 10px;\n    border-radius: 50%;\n}\n.hc-prospect-interaction-cloudtalk-message {\n    margin-top: 9px;\n    padding-top: 9px;\n    border-top: 1px solid #eeeeee;\n}\n.hc-prospect-interaction-cloudtalk-message-meta {\n    display: flex;\n    justify-content: space-between;\n    gap: 8px;\n    font-size: 10px;\n    color: #999999;\n}\n.hc-prospect-interaction-cloudtalk-message-body {\n    margin-top: 4px;\n    display: -webkit-box;\n    overflow: hidden;\n    color: #333333;\n    font-size: 12px;\n    line-height: 1.35;\n    -webkit-line-clamp: 3;\n    -webkit-box-orient: vertical;\n}\n.hc-prospect-interaction-cloudtalk-message-users {\n    display: flex;\n    align-items: center;\n    gap: 6px;\n    margin-top: 5px;\n    font-size: 11px;\n    color: #777777;\n}\n", ""]);
+___CSS_LOADER_EXPORT___.push([module.id, "\n.hc-prospect-interaction-root {\n    position: relative;\n    width: 100%;\n    height: 100%;\n    overflow-y: hidden;\n}\n.hc-prospect-interaction-item {\n    padding: 4px 0 !important;\n    text-decoration: none;\n}\n.hc-prospect-interaction-item-number {\n    font-size: 11px;\n    color: #999999;\n}\n.hc-prospect-interaction-cloudtalk-panel {\n    --cloudtalk-phone-width: 300px;\n    --cloudtalk-context-width: 320px;\n    position: absolute;\n    top: 0;\n    right: 0;\n    bottom: 0;\n    left: 0;\n    z-index: 5;\n    display: flex;\n    flex-direction: column;\n    background: #ffffff;\n    opacity: 0;\n    pointer-events: none;\n    visibility: hidden;\n}\n.hc-prospect-interaction-cloudtalk-panel.with-context {\n    right: auto;\n    width: var(--cloudtalk-phone-width);\n}\n.hc-prospect-interaction-cloudtalk-panel.context-open {\n    width: calc(\n        var(--cloudtalk-phone-width) + var(--cloudtalk-context-width)\n    );\n}\n.hc-prospect-interaction-cloudtalk-panel.visible {\n    opacity: 1;\n    pointer-events: auto;\n    visibility: visible;\n}\n.hc-prospect-interaction-cloudtalk-back {\n    flex: 0 0 auto;\n}\n.hc-prospect-interaction-cloudtalk-content {\n    position: relative;\n    display: flex;\n    flex: 1 1 auto;\n    min-height: 0;\n    overflow: hidden;\n}\n.hc-prospect-interaction-cloudtalk-retry {\n    position: absolute;\n    top: 0;\n    bottom: 0;\n    left: 0;\n    z-index: 3;\n    display: flex;\n    width: var(--cloudtalk-phone-width);\n    flex-direction: column;\n    align-items: center;\n    justify-content: center;\n    gap: 10px;\n    padding: 16px;\n    background: rgba(255, 255, 255, 0.9);\n    text-align: center;\n}\n.hc-prospect-interaction-cloudtalk-retry-title {\n    font-size: 12px;\n    font-weight: 700;\n    color: #333333;\n}\n.hc-prospect-interaction-cloudtalk-retry-actions {\n    display: flex;\n    flex-direction: column;\n    gap: 8px;\n    width: 100%;\n    max-width: 220px;\n}\n.hc-prospect-interaction-cloudtalk-retry-button {\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    gap: 8px;\n    min-height: 34px;\n    padding: 8px 12px;\n    border: 1px solid #12a0f3;\n    border-radius: 4px;\n    background: #12a0f3;\n    color: #ffffff;\n    cursor: pointer;\n    font-size: 12px;\n    font-weight: 700;\n}\n.hc-prospect-interaction-cloudtalk-retry-button.secondary {\n    border-color: #dddddd;\n    background: #ffffff;\n    color: #333333;\n}\n.hc-prospect-interaction-cloudtalk-retry-button.secondary:hover {\n    background: #f5f5f5;\n}\n.hc-prospect-interaction-cloudtalk-retry-button:disabled {\n    border-color: #bbbbbb;\n    background: #bbbbbb;\n    cursor: wait;\n}\n.hc-prospect-interaction-cloudtalk-phone {\n    flex: 1 1 auto;\n    min-width: 0;\n}\n.hc-prospect-interaction-cloudtalk-panel.with-context\n    .hc-prospect-interaction-cloudtalk-phone {\n    flex: 0 0 var(--cloudtalk-phone-width);\n    width: var(--cloudtalk-phone-width);\n}\n.hc-prospect-interaction-cloudtalk-context-toggle {\n    position: absolute;\n    top: 50%;\n    right: 0;\n    z-index: 2;\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    width: 24px;\n    height: 42px;\n    padding: 0;\n    border: 1px solid #dddddd;\n    border-right: 0;\n    border-radius: 4px 0 0 4px;\n    background: #ffffff;\n    color: #555555;\n    cursor: pointer;\n    transform: translateY(-50%);\n}\n.hc-prospect-interaction-cloudtalk-context-toggle:hover {\n    background: #f5f5f5;\n}\n.hc-prospect-interaction-cloudtalk-panel.context-open\n    .hc-prospect-interaction-cloudtalk-context-toggle {\n    right: var(--cloudtalk-context-width);\n}\n.hc-prospect-interaction-cloudtalk-context {\n    display: flex;\n    flex: 0 0 var(--cloudtalk-context-width);\n    flex-direction: column;\n    gap: 14px;\n    height: 100%;\n    overflow: auto;\n    padding: 14px;\n    border-left: 1px solid #e5e5e5;\n    background: #fafafa;\n}\n.hc-prospect-interaction-cloudtalk-context-loading {\n    position: relative;\n    min-height: 80px;\n}\n.hc-prospect-interaction-cloudtalk-context-header {\n    display: flex;\n    align-items: flex-start;\n    justify-content: space-between;\n    gap: 10px;\n}\n.hc-prospect-interaction-cloudtalk-context-title {\n    font-size: 16px;\n    font-weight: 700;\n    line-height: 1.2;\n    color: #222222;\n    overflow-wrap: anywhere;\n}\n.hc-prospect-interaction-cloudtalk-context-subtitle {\n    margin-top: 3px;\n    font-size: 12px;\n    color: #777777;\n    overflow-wrap: anywhere;\n}\n.hc-prospect-interaction-cloudtalk-context-link {\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    width: 28px;\n    height: 28px;\n    color: #555555;\n    text-decoration: none;\n}\n.hc-prospect-interaction-cloudtalk-context-section {\n    display: flex;\n    flex-direction: column;\n    gap: 8px;\n}\n.hc-prospect-interaction-cloudtalk-context-heading {\n    font-size: 11px;\n    font-weight: 700;\n    color: #777777;\n    text-transform: uppercase;\n}\n.hc-prospect-interaction-cloudtalk-context-line {\n    display: flex;\n    align-items: center;\n    gap: 8px;\n    min-width: 0;\n    font-size: 12px;\n    color: #333333;\n}\n.hc-prospect-interaction-cloudtalk-context-line span {\n    min-width: 0;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n.hc-prospect-interaction-cloudtalk-context-empty {\n    font-size: 12px;\n    color: #999999;\n}\n.hc-prospect-interaction-cloudtalk-context-button {\n    position: relative;\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    gap: 8px;\n    min-height: 34px;\n    padding: 8px 10px;\n    border: 1px solid #dddddd;\n    border-radius: 4px;\n    background: #ffffff;\n    color: #333333;\n    cursor: pointer;\n    font-size: 12px;\n    font-weight: 600;\n}\n.hc-prospect-interaction-cloudtalk-context-button:hover {\n    background: #f5f5f5;\n}\n.hc-prospect-interaction-cloudtalk-context-button:disabled {\n    color: #999999;\n    cursor: default;\n}\n.hc-prospect-interaction-cloudtalk-thread {\n    padding: 10px;\n    border: 1px solid #e7e7e7;\n    border-radius: 6px;\n    background: #ffffff;\n}\n.hc-prospect-interaction-cloudtalk-thread-title {\n    display: flex;\n    align-items: center;\n    gap: 8px;\n    min-width: 0;\n    font-size: 13px;\n    font-weight: 700;\n    color: #222222;\n}\n.hc-prospect-interaction-cloudtalk-thread-title > span:nth-child(2) {\n    flex: 1;\n    min-width: 0;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n.hc-prospect-interaction-cloudtalk-thread-title small {\n    font-size: 11px;\n    font-weight: 600;\n    color: #777777;\n}\n.hc-prospect-interaction-cloudtalk-thread-color {\n    display: inline-block;\n    flex: 0 0 10px;\n    width: 10px;\n    height: 10px;\n    border-radius: 50%;\n}\n.hc-prospect-interaction-cloudtalk-message {\n    margin-top: 9px;\n    padding-top: 9px;\n    border-top: 1px solid #eeeeee;\n}\n.hc-prospect-interaction-cloudtalk-message-meta {\n    display: flex;\n    justify-content: space-between;\n    gap: 8px;\n    font-size: 10px;\n    color: #999999;\n}\n.hc-prospect-interaction-cloudtalk-message-body {\n    margin-top: 4px;\n    display: -webkit-box;\n    overflow: hidden;\n    color: #333333;\n    font-size: 12px;\n    line-height: 1.35;\n    -webkit-line-clamp: 3;\n    -webkit-box-orient: vertical;\n}\n.hc-prospect-interaction-cloudtalk-message-users {\n    display: flex;\n    align-items: center;\n    gap: 6px;\n    margin-top: 5px;\n    font-size: 11px;\n    color: #777777;\n}\n", ""]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 

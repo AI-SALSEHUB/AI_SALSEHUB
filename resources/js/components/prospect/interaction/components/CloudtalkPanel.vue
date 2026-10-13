@@ -46,15 +46,25 @@
                     class="hc-prospect-interaction-cloudtalk-retry-title"
                     v-text="`L'appel CloudTalk n'est pas passe.`"
                 ></div>
-                <button
-                    type="button"
-                    class="hc-prospect-interaction-cloudtalk-retry-button"
-                    :disabled="calling || loading"
-                    @click="emitPanelEvent('make-call')"
-                >
-                    <icon class="fa fa-phone" />
-                    <span v-text="`Relancer l'appel`"></span>
-                </button>
+                <div class="hc-prospect-interaction-cloudtalk-retry-actions">
+                    <button
+                        type="button"
+                        class="hc-prospect-interaction-cloudtalk-retry-button secondary"
+                        @click="emitPanelEvent('login-cloudtalk')"
+                    >
+                        <icon class="fa fa-sign-in" />
+                        <span v-text="`Se connecter a CloudTalk`"></span>
+                    </button>
+                    <button
+                        type="button"
+                        class="hc-prospect-interaction-cloudtalk-retry-button"
+                        :disabled="calling || loading"
+                        @click="emitPanelEvent('make-call')"
+                    >
+                        <icon class="fa fa-phone" />
+                        <span v-text="`Relancer l'appel`"></span>
+                    </button>
+                </div>
             </div>
 
             <button
@@ -488,6 +498,7 @@ export default {
         "answered-call",
         "contact-info",
         "back",
+        "login-cloudtalk",
         "create-prospect",
         "context-panel-visible",
     ],

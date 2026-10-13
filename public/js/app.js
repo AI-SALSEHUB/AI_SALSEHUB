@@ -45311,18 +45311,29 @@ var state = {
  */
 var actions = (_actions = {}, _defineProperty(_actions, _actions_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_1__.FETCH_PROSPECT_INTERACTIONS, function (context, params) {
   return _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
-    var _yield$ProspectIntera, data;
+    var _context$state$projec;
+    var prospectId, _yield$ProspectIntera, data;
     return _regeneratorRuntime().wrap(function _callee$(_context) {
       while (1) switch (_context.prev = _context.next) {
         case 0:
-          _context.next = 2;
-          return _apis_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_0__["default"].get(context.state.project.slug, context.state.project.interactionProspect.id, params);
-        case 2:
+          prospectId = (_context$state$projec = context.state.project.interactionProspect) === null || _context$state$projec === void 0 ? void 0 : _context$state$projec.id;
+          if (prospectId) {
+            _context.next = 3;
+            break;
+          }
+          return _context.abrupt("return", []);
+        case 3:
+          _context.next = 5;
+          return _apis_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_0__["default"].get(context.state.project.slug, prospectId, params);
+        case 5:
           _yield$ProspectIntera = _context.sent;
           data = _yield$ProspectIntera.data;
-          context.commit(_actions_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_1__.SET_PROSPECT_INTERACTIONS, data);
+          context.commit(_actions_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_1__.SET_PROSPECT_INTERACTIONS, {
+            prospectId: prospectId,
+            interactions: data
+          });
           return _context.abrupt("return", data);
-        case 6:
+        case 9:
         case "end":
           return _context.stop();
       }
@@ -45330,18 +45341,29 @@ var actions = (_actions = {}, _defineProperty(_actions, _actions_project_prospec
   }))();
 }), _defineProperty(_actions, _actions_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_1__.ADD_PROSPECT_INTERACTION, function (context, params) {
   return _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee2() {
-    var _yield$ProspectIntera2, data;
+    var _context$state$projec2;
+    var prospectId, _yield$ProspectIntera2, data;
     return _regeneratorRuntime().wrap(function _callee2$(_context2) {
       while (1) switch (_context2.prev = _context2.next) {
         case 0:
-          _context2.next = 2;
-          return _apis_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_0__["default"].create(context.state.project.slug, context.state.project.interactionProspect.id, params);
-        case 2:
+          prospectId = (params === null || params === void 0 ? void 0 : params.prospect_id) || ((_context$state$projec2 = context.state.project.interactionProspect) === null || _context$state$projec2 === void 0 ? void 0 : _context$state$projec2.id);
+          if (prospectId) {
+            _context2.next = 3;
+            break;
+          }
+          return _context2.abrupt("return", null);
+        case 3:
+          _context2.next = 5;
+          return _apis_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_0__["default"].create(context.state.project.slug, prospectId, params);
+        case 5:
           _yield$ProspectIntera2 = _context2.sent;
           data = _yield$ProspectIntera2.data;
-          context.commit(_actions_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_1__.ADD_PROSPECT_INTERACTION, data);
+          context.commit(_actions_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_1__.ADD_PROSPECT_INTERACTION, {
+            prospectId: prospectId,
+            interaction: data
+          });
           return _context2.abrupt("return", data);
-        case 6:
+        case 9:
         case "end":
           return _context2.stop();
       }
@@ -45349,18 +45371,29 @@ var actions = (_actions = {}, _defineProperty(_actions, _actions_project_prospec
   }))();
 }), _defineProperty(_actions, _actions_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_1__.UPDATE_PROSPECT_INTERACTION, function (context, params) {
   return _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee3() {
-    var _yield$ProspectIntera3, data;
+    var _context$state$projec3;
+    var prospectId, _yield$ProspectIntera3, data;
     return _regeneratorRuntime().wrap(function _callee3$(_context3) {
       while (1) switch (_context3.prev = _context3.next) {
         case 0:
-          _context3.next = 2;
-          return _apis_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_0__["default"].update(context.state.project.slug, context.state.project.interactionProspect.id, params.id, params);
-        case 2:
+          prospectId = (params === null || params === void 0 ? void 0 : params.prospect_id) || ((_context$state$projec3 = context.state.project.interactionProspect) === null || _context$state$projec3 === void 0 ? void 0 : _context$state$projec3.id);
+          if (!(!prospectId || !(params !== null && params !== void 0 && params.id))) {
+            _context3.next = 3;
+            break;
+          }
+          return _context3.abrupt("return", null);
+        case 3:
+          _context3.next = 5;
+          return _apis_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_0__["default"].update(context.state.project.slug, prospectId, params.id, params);
+        case 5:
           _yield$ProspectIntera3 = _context3.sent;
           data = _yield$ProspectIntera3.data;
-          context.commit(_actions_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_1__.UPDATE_PROSPECT_INTERACTION, data);
+          context.commit(_actions_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_1__.UPDATE_PROSPECT_INTERACTION, {
+            prospectId: prospectId,
+            interaction: data
+          });
           return _context3.abrupt("return", data);
-        case 6:
+        case 9:
         case "end":
           return _context3.stop();
       }
@@ -45368,14 +45401,26 @@ var actions = (_actions = {}, _defineProperty(_actions, _actions_project_prospec
   }))();
 }), _defineProperty(_actions, _actions_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_1__.REMOVE_PROSPECT_INTERACTION, function (context, slug) {
   return _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee4() {
+    var _context$state$projec4;
+    var prospectId;
     return _regeneratorRuntime().wrap(function _callee4$(_context4) {
       while (1) switch (_context4.prev = _context4.next) {
         case 0:
-          _context4.next = 2;
-          return _apis_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_0__["default"].destroy(context.state.project.slug, context.state.project.interactionProspect.id, slug);
-        case 2:
-          context.commit(_actions_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_1__.REMOVE_PROSPECT_INTERACTION, slug);
+          prospectId = (_context$state$projec4 = context.state.project.interactionProspect) === null || _context$state$projec4 === void 0 ? void 0 : _context$state$projec4.id;
+          if (prospectId) {
+            _context4.next = 3;
+            break;
+          }
+          return _context4.abrupt("return");
         case 3:
+          _context4.next = 5;
+          return _apis_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_0__["default"].destroy(context.state.project.slug, prospectId, slug);
+        case 5:
+          context.commit(_actions_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_1__.REMOVE_PROSPECT_INTERACTION, {
+            prospectId: prospectId,
+            id: slug
+          });
+        case 6:
         case "end":
           return _context4.stop();
       }
@@ -45386,23 +45431,47 @@ var actions = (_actions = {}, _defineProperty(_actions, _actions_project_prospec
 /**
  * Prospect interaction Store Mutations
  */
-var mutations = (_mutations = {}, _defineProperty(_mutations, _actions_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_1__.SET_PROSPECT_INTERACTIONS, function (state, interactions) {
+var mutations = (_mutations = {}, _defineProperty(_mutations, _actions_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_1__.SET_PROSPECT_INTERACTIONS, function (state, params) {
+  var _state$project$intera;
+  var prospectId = (params === null || params === void 0 ? void 0 : params.prospectId) || ((_state$project$intera = state.project.interactionProspect) === null || _state$project$intera === void 0 ? void 0 : _state$project$intera.id);
+  var interactions = (params === null || params === void 0 ? void 0 : params.interactions) || params;
+  if (!state.project.interactionProspect || state.project.interactionProspect.id != prospectId) {
+    return;
+  }
   state.project.interactionProspect.interactions = interactions;
-}), _defineProperty(_mutations, _actions_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_1__.ADD_PROSPECT_INTERACTION, function (state, interaction) {
+}), _defineProperty(_mutations, _actions_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_1__.ADD_PROSPECT_INTERACTION, function (state, params) {
+  var _state$project$intera2;
+  var prospectId = (params === null || params === void 0 ? void 0 : params.prospectId) || ((_state$project$intera2 = state.project.interactionProspect) === null || _state$project$intera2 === void 0 ? void 0 : _state$project$intera2.id);
+  var interaction = (params === null || params === void 0 ? void 0 : params.interaction) || params;
+  if (!interaction || !state.project.interactionProspect || state.project.interactionProspect.id != prospectId) {
+    return;
+  }
   state.project.interactionProspect.interactions = [interaction].concat(_toConsumableArray(state.project.interactionProspect.interactions ? state.project.interactionProspect.interactions : []));
   state.project.prospects = state.project.prospects.map(function (o) {
     return o.id == state.project.interactionProspect.id ? _objectSpread(_objectSpread({}, o), state.project.interactionProspect) : o;
   });
 }), _defineProperty(_mutations, _actions_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_1__.UPDATE_PROSPECT_INTERACTION, function (state, params) {
+  var _state$project$intera3;
+  var prospectId = (params === null || params === void 0 ? void 0 : params.prospectId) || ((_state$project$intera3 = state.project.interactionProspect) === null || _state$project$intera3 === void 0 ? void 0 : _state$project$intera3.id);
+  var interaction = (params === null || params === void 0 ? void 0 : params.interaction) || params;
+  if (!interaction || !state.project.interactionProspect || state.project.interactionProspect.id != prospectId) {
+    return;
+  }
   state.project.interactionProspect.interactions = (state.project.interactionProspect.interactions ? state.project.interactionProspect.interactions : []).map(function (o) {
-    return o.id == params.id ? _objectSpread(_objectSpread({}, o), params) : o;
+    return o.id == interaction.id ? _objectSpread(_objectSpread({}, o), interaction) : o;
   });
   state.project.prospects = state.project.prospects.map(function (o) {
     return o.id == state.project.interactionProspect.id ? _objectSpread(_objectSpread({}, o), state.project.interactionProspect) : o;
   });
-}), _defineProperty(_mutations, _actions_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_1__.REMOVE_PROSPECT_INTERACTION, function (state, slug) {
+}), _defineProperty(_mutations, _actions_project_prospect_interaction__WEBPACK_IMPORTED_MODULE_1__.REMOVE_PROSPECT_INTERACTION, function (state, params) {
+  var _state$project$intera4;
+  var prospectId = (params === null || params === void 0 ? void 0 : params.prospectId) || ((_state$project$intera4 = state.project.interactionProspect) === null || _state$project$intera4 === void 0 ? void 0 : _state$project$intera4.id);
+  var id = (params === null || params === void 0 ? void 0 : params.id) || params;
+  if (!state.project.interactionProspect || state.project.interactionProspect.id != prospectId) {
+    return;
+  }
   state.project.interactionProspect.interactions = (state.project.interactionProspect.interactions ? state.project.interactionProspect.interactions : []).filter(function (o) {
-    return o.id != slug;
+    return o.id != id;
   });
   state.project.prospects = state.project.prospects.map(function (o) {
     return o.id == state.project.interactionProspect.id ? _objectSpread(_objectSpread({}, o), state.project.interactionProspect) : o;

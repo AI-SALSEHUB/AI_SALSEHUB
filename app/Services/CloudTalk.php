@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Line;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class CloudTalk
@@ -311,10 +312,28 @@ class CloudTalk
     {
         $cdr = data_get($item, 'Cdr', []);
         $id = (string) data_get($cdr, 'id', '');
+        $direction = $this->normalizeCallDirection(
+            data_get($cdr, 'type')
+                ?: data_get($cdr, 'direction')
+                ?: data_get($item, 'Call.direction')
+                ?: data_get($item, 'direction')
+        );
         $recorded = filter_var(
             data_get($cdr, 'recorded', false),
             FILTER_VALIDATE_BOOLEAN
         );
+        $hasVoicemail = $this->cloudTalkHistoryHasVoicemail($cdr, $item);
+        $status = $this->normalizeCallHistoryStatus(
+            $cdr,
+            $item,
+            $direction,
+            $hasVoicemail
+        );
+        $voicemailLink = data_get($cdr, 'voicemail_link')
+            ?: data_get($cdr, 'voicemail_url')
+            ?: data_get($cdr, 'voicemail_recording_link')
+            ?: data_get($item, 'Voicemail.recording_link')
+            ?: data_get($item, 'Voicemail.url');
 
         return [
             'id' => $id,
@@ -324,8 +343,14 @@ class CloudTalk
                 ?: data_get($item, 'Call.call_uuid')
                 ?: data_get($item, 'uuid')
                 ?: data_get($item, 'call_uuid'),
-            'type' => data_get($cdr, 'type'),
-            'status' => data_get($cdr, 'status'),
+            'type' => $direction ?: data_get($cdr, 'type'),
+            'direction' => $direction,
+            'status' => $status,
+            'cloudtalk_status' => data_get($cdr, 'status'),
+            'outcome' => $status,
+            'missed' => $status === 'missed',
+            'has_voicemail' => $hasVoicemail,
+            'voicemail_link' => $voicemailLink,
             'number' => data_get($cdr, 'public_external')
                 ?: data_get($cdr, 'external_number')
                 ?: data_get($item, 'Call.external_number'),
@@ -347,6 +372,108 @@ class CloudTalk
             'contact' => data_get($item, 'Contact'),
             'raw' => $item,
         ];
+    }
+
+    protected function normalizeCallDirection(?string $direction): ?string
+    {
+        return match (strtolower((string) $direction)) {
+            'inbound', 'incoming', 'in' => 'incoming',
+            'outbound', 'outgoing', 'out' => 'outgoing',
+            'internal' => 'internal',
+            default => null,
+        };
+    }
+
+    protected function normalizeCallHistoryStatus(
+        array $cdr,
+        array $item,
+        ?string $direction,
+        bool $hasVoicemail
+    ): ?string {
+        $rawStatus = data_get($cdr, 'status')
+            ?: data_get($cdr, 'result')
+            ?: data_get($cdr, 'disposition')
+            ?: data_get($item, 'Call.status')
+            ?: data_get($item, 'status');
+
+        if ($hasVoicemail) {
+            return 'voicemail';
+        }
+
+        $statusText = strtolower((string) $rawStatus);
+
+        if ($this->containsAny($statusText, [
+            'voicemail',
+            'voice_mail',
+            'voice mail',
+            'messagerie',
+        ])) {
+            return 'voicemail';
+        }
+
+        if ($this->containsAny($statusText, [
+            'missed',
+            'no_answer',
+            'not_answered',
+            'unanswered',
+            'abandoned',
+            'lost',
+        ])) {
+            return 'missed';
+        }
+
+        if (
+            $direction === 'incoming' &&
+            !$this->hasPositiveDuration(data_get($cdr, 'talking_time')) &&
+            !data_get($cdr, 'answered_at') &&
+            $this->containsAny($statusText, ['busy', 'failed', 'reject', 'cancel'])
+        ) {
+            return 'missed';
+        }
+
+        return $rawStatus ? (string) $rawStatus : null;
+    }
+
+    protected function cloudTalkHistoryHasVoicemail(array $cdr, array $item): bool
+    {
+        foreach ([
+            data_get($cdr, 'has_voicemail'),
+            data_get($cdr, 'voicemail'),
+            data_get($cdr, 'is_voicemail'),
+        ] as $value) {
+            if ($value !== null && $value !== '' && filter_var($value, FILTER_VALIDATE_BOOLEAN)) {
+                return true;
+            }
+        }
+
+        return (bool) (
+            data_get($item, 'Voicemail.id') ||
+            data_get($item, 'Voicemail.recording_link') ||
+            data_get($cdr, 'voicemail_link') ||
+            data_get($cdr, 'voicemail_url') ||
+            data_get($cdr, 'voicemail_recording_link') ||
+            $this->containsAny(strtolower((string) data_get($cdr, 'status')), [
+                'voicemail',
+                'voice_mail',
+                'voice mail',
+            ])
+        );
+    }
+
+    protected function hasPositiveDuration($value): bool
+    {
+        return is_numeric($value) && (float) $value > 0;
+    }
+
+    protected function containsAny(string $text, array $needles): bool
+    {
+        foreach ($needles as $needle) {
+            if ($needle !== '' && str_contains($text, $needle)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     protected function validateConfig(array $config): void
