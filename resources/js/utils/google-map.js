@@ -12,10 +12,20 @@ function hasGoogleMaps() {
     return !!(window.google && window.google.maps);
 }
 
+function getRuntimeGoogleMapApiKey() {
+    if (window.HEROES && window.HEROES.googleMapApiKey) {
+        return window.HEROES.googleMapApiKey;
+    }
+
+    return process.env.MIX_GOOGLE_MAP_API_KEY;
+}
+
 function getGoogleMapScriptSrc() {
-    if (process.env.MIX_GOOGLE_MAP_API_KEY) {
+    const apiKey = getRuntimeGoogleMapApiKey();
+
+    if (apiKey) {
         const params = new URLSearchParams({
-            key: process.env.MIX_GOOGLE_MAP_API_KEY,
+            key: apiKey,
             callback: "emitGoogleMapLoaded",
             libraries: "places",
         });
@@ -54,7 +64,7 @@ export default function () {
     if (hasMissingApiKey(scriptSrc)) {
         googleMapRejectInitPromise(
             new Error(
-                "Google Maps API key is missing. Set MIX_GOOGLE_MAP_API_KEY or MIX_GOOGLE_MAP_API_JS_URI and rebuild assets."
+                "Google Maps API key is missing. Set GOOGLE_MAP_API_KEY in Laravel, or set MIX_GOOGLE_MAP_API_KEY/MIX_GOOGLE_MAP_API_JS_URI before building assets."
             )
         );
         return initGoogleMapPromise;
