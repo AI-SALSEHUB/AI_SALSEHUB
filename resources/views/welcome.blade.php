@@ -9,6 +9,11 @@
         <meta http-equiv="Cache-control" content="public">
         <link href="https://fonts.cdnfonts.com/css/inter" rel="stylesheet">
         <link rel="stylesheet" href="{{ mix('css/app.css') }}">
+        <script>
+            window.HEROES = Object.assign(window.HEROES || {}, {
+                googleMapApiKey: @json(config('google-map.api_key')),
+            });
+        </script>
         <script src="{{ mix('js/app.js') }}" defer></script>
         <!--script src="{{ url('js/chart.js') }}" defer></script-->
     </head>
