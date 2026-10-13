@@ -333,12 +333,17 @@ class EventController extends Controller
             //->paginate($count);
 
         if (!auth()->user()->can('', $project)) {
-            $events = $events->map(function ($event) {
+            $events = $events->map(function ($event) use($canViewOthersAgenda, $agendaUserIds) {
                 if (
+                    $canViewOthersAgenda ||
+                    in_array($event->user_id, $agendaUserIds) ||
                     $event->user_id == auth()->id() || 
                     $event->creator_id == auth()->id() || 
                     ($event->users && $event->users->where(function($user) {
                         return $user->id == auth()->id();
+                    })->first()) ||
+                    ($event->users && $event->users->where(function($user) use($agendaUserIds) {
+                        return in_array($user->id, $agendaUserIds);
                     })->first())
                 ) {
                     return $event;

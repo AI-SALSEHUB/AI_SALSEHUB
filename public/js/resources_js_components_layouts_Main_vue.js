@@ -52478,14 +52478,20 @@ function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len 
     setAgendaUsersPermissions: function setAgendaUsersPermissions(permission) {
       var _this2 = this;
       if (permission.key == "agenda") {
-        permission.sub = this.userUsers.map(function (user) {
+        permission.sub = [{
+          key: "all",
+          name: "Tous les utilisateurs",
+          icon: "fa-check-square icon-green",
+          bulkPermissionAction: "agenda-users",
+          ignoreParentPermission: true
+        }].concat(_toConsumableArray(this.userUsers.map(function (user) {
           return {
             key: user.id.toString(),
             name: user.name,
             icon: "fa-user icon-brown",
             ignoreParentPermission: true
           };
-        });
+        })));
         return;
       }
       if (permission.sub) {
@@ -52560,6 +52566,9 @@ function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len 
       return this.isPermissionNameChecked(key);
     },
     permissionValue: function permissionValue(permission) {
+      if (this.isBulkAgendaUsersPermission(permission)) {
+        return this.areAllAgendaUsersChecked();
+      }
       if (permission && permission.ignoreParentPermission) {
         return this.isPermissionChecked(permission);
       }
@@ -52570,6 +52579,38 @@ function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len 
         return false;
       }
       return this.isPermissionDisabled(permission);
+    },
+    isBulkAgendaUsersPermission: function isBulkAgendaUsersPermission(permission) {
+      return permission && permission.bulkPermissionAction == "agenda-users";
+    },
+    agendaUserPermissions: function agendaUserPermissions() {
+      var _this4 = this;
+      var agenda = this.findPermissionByValue(this.permissions, "all.project.user.agenda");
+      if (!agenda || !agenda.sub) {
+        return [];
+      }
+      return agenda.sub.filter(function (permission) {
+        return !_this4.isBulkAgendaUsersPermission(permission);
+      });
+    },
+    areAllAgendaUsersChecked: function areAllAgendaUsersChecked() {
+      var _this5 = this;
+      var permissions = this.agendaUserPermissions();
+      return permissions.length > 0 && permissions.every(function (permission) {
+        return _this5.isPermissionChecked(permission);
+      });
+    },
+    changePermission: function changePermission(permission, event) {
+      var _this6 = this;
+      if (!this.isBulkAgendaUsersPermission(permission)) {
+        return;
+      }
+      var checked = event.target.checked;
+      this.agendaUserPermissions().filter(function (permission) {
+        return checked ? !_this6.isPermissionChecked(permission) : _this6.isPermissionChecked(permission);
+      }).forEach(function (permission) {
+        _store__WEBPACK_IMPORTED_MODULE_0__["default"].dispatch(checked ? _actions_project_user_permission__WEBPACK_IMPORTED_MODULE_2__.ADD_USER_PERMISSION : _actions_project_user_permission__WEBPACK_IMPORTED_MODULE_2__.REMOVE_USER_PERMISSION, permission.value);
+      });
     },
     /**
      *
@@ -52715,6 +52756,10 @@ __webpack_require__.r(__webpack_exports__);
   },
   methods: {
     change: function change(event) {
+      if (this.permission && this.permission.bulkPermissionAction) {
+        this.$emit("change", event);
+        return;
+      }
       _store__WEBPACK_IMPORTED_MODULE_0__["default"].dispatch(event.target.checked ? _actions_project_user_permission__WEBPACK_IMPORTED_MODULE_1__.ADD_USER_PERMISSION : _actions_project_user_permission__WEBPACK_IMPORTED_MODULE_1__.REMOVE_USER_PERMISSION, this.permissionValue);
       this.$emit("change", event);
     }
@@ -99463,13 +99508,16 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
                 key: permission.value || permission.id || permission.key,
                 permission: permission,
                 "permission-value": $options.currentPermissionValue(permission),
-                value: $options.isPermissionChecked(permission) || $options.isPermissionDisabled(permission),
+                value: $options.permissionValue(permission),
                 count: $options.checkedPermissionsCount(permission),
-                disabled: $options.isPermissionDisabled(permission),
+                disabled: $options.permissionDisabled(permission),
                 onClick: function onClick($event) {
                   return $options.setCurrentPermissionGroup(permission);
+                },
+                onChange: function onChange($event) {
+                  return $options.changePermission(permission, $event);
                 }
-              }, null, 8 /* PROPS */, ["permission", "permission-value", "value", "count", "disabled", "onClick"]);
+              }, null, 8 /* PROPS */, ["permission", "permission-value", "value", "count", "disabled", "onClick", "onChange"]);
             }), 128 /* KEYED_FRAGMENT */))];
           }),
           _: 2 /* DYNAMIC */
@@ -99487,13 +99535,16 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
           key: permission.value || permission.id || permission.key,
           permission: permission,
           "permission-value": $options.currentPermissionValue(permission),
-          value: $options.isPermissionChecked(permission) || $options.isPermissionDisabled(permission),
+          value: $options.permissionValue(permission),
           count: $options.checkedPermissionsCount(permission),
-          disabled: $options.isPermissionDisabled(permission),
+          disabled: $options.permissionDisabled(permission),
           onClick: function onClick($event) {
             return $options.setCurrentPermissionGroup(permission);
+          },
+          onChange: function onChange($event) {
+            return $options.changePermission(permission, $event);
           }
-        }, null, 8 /* PROPS */, ["permission", "permission-value", "value", "count", "disabled", "onClick"]);
+        }, null, 8 /* PROPS */, ["permission", "permission-value", "value", "count", "disabled", "onClick", "onChange"]);
       }), 128 /* KEYED_FRAGMENT */))];
     }),
     _: 1 /* STABLE */

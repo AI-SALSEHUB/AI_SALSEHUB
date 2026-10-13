@@ -47,13 +47,11 @@
                         :key="permission.value || permission.id || permission.key"
                         :permission="permission"
                         :permission-value="currentPermissionValue(permission)"
-                        :value="
-                            isPermissionChecked(permission) ||
-                            isPermissionDisabled(permission)
-                        "
+                        :value="permissionValue(permission)"
                         :count="checkedPermissionsCount(permission)"
-                        :disabled="isPermissionDisabled(permission)"
+                        :disabled="permissionDisabled(permission)"
                         @click="setCurrentPermissionGroup(permission)"
+                        @change="changePermission(permission, $event)"
                     />
                 </item-list>
             </template>
@@ -66,13 +64,11 @@
                 :key="permission.value || permission.id || permission.key"
                 :permission="permission"
                 :permission-value="currentPermissionValue(permission)"
-                :value="
-                    isPermissionChecked(permission) ||
-                    isPermissionDisabled(permission)
-                "
+                :value="permissionValue(permission)"
                 :count="checkedPermissionsCount(permission)"
-                :disabled="isPermissionDisabled(permission)"
+                :disabled="permissionDisabled(permission)"
                 @click="setCurrentPermissionGroup(permission)"
+                @change="changePermission(permission, $event)"
             />
         </item-list>
     </div>
@@ -153,12 +149,21 @@ export default {
 
         setAgendaUsersPermissions(permission) {
             if (permission.key == "agenda") {
-                permission.sub = this.userUsers.map((user) => ({
-                    key: user.id.toString(),
-                    name: user.name,
-                    icon: "fa-user icon-brown",
-                    ignoreParentPermission: true,
-                }));
+                permission.sub = [
+                    {
+                        key: "all",
+                        name: "Tous les utilisateurs",
+                        icon: "fa-check-square icon-green",
+                        bulkPermissionAction: "agenda-users",
+                        ignoreParentPermission: true,
+                    },
+                    ...this.userUsers.map((user) => ({
+                        key: user.id.toString(),
+                        name: user.name,
+                        icon: "fa-user icon-brown",
+                        ignoreParentPermission: true,
+                    })),
+                ];
                 return;
             }
 
@@ -246,6 +251,10 @@ export default {
         },
 
         permissionValue(permission) {
+            if (this.isBulkAgendaUsersPermission(permission)) {
+                return this.areAllAgendaUsersChecked();
+            }
+
             if (permission && permission.ignoreParentPermission) {
                 return this.isPermissionChecked(permission);
             }
@@ -262,6 +271,60 @@ export default {
             }
 
             return this.isPermissionDisabled(permission);
+        },
+
+        isBulkAgendaUsersPermission(permission) {
+            return (
+                permission &&
+                permission.bulkPermissionAction == "agenda-users"
+            );
+        },
+
+        agendaUserPermissions() {
+            const agenda = this.findPermissionByValue(
+                this.permissions,
+                "all.project.user.agenda"
+            );
+
+            if (!agenda || !agenda.sub) {
+                return [];
+            }
+
+            return agenda.sub.filter(
+                (permission) => !this.isBulkAgendaUsersPermission(permission)
+            );
+        },
+
+        areAllAgendaUsersChecked() {
+            const permissions = this.agendaUserPermissions();
+
+            return (
+                permissions.length > 0 &&
+                permissions.every((permission) =>
+                    this.isPermissionChecked(permission)
+                )
+            );
+        },
+
+        changePermission(permission, event) {
+            if (!this.isBulkAgendaUsersPermission(permission)) {
+                return;
+            }
+
+            const checked = event.target.checked;
+
+            this.agendaUserPermissions()
+                .filter((permission) =>
+                    checked
+                        ? !this.isPermissionChecked(permission)
+                        : this.isPermissionChecked(permission)
+                )
+                .forEach((permission) => {
+                    store.dispatch(
+                        checked ? ADD_USER_PERMISSION : REMOVE_USER_PERMISSION,
+                        permission.value
+                    );
+                });
         },
 
         /**
