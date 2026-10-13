@@ -32,6 +32,45 @@ class Line extends Model
     ];
 
 
+    // Attributes
+
+    /**
+     * SMS sender number stored in the operator config.
+     */
+    public function getNumeroAttribute()
+    {
+        return data_get($this->config, 'numero');
+    }
+
+    /**
+     * Public CloudTalk agent id without exposing API credentials.
+     */
+    public function getCloudtalkAgentIdAttribute()
+    {
+        if ($this->operator !== 'cloudtalk') {
+            return null;
+        }
+
+        return data_get($this->config, 'agent_id');
+    }
+
+    /**
+     * Public CloudTalk agent label without exposing API credentials.
+     */
+    public function getCloudtalkAgentNameAttribute()
+    {
+        if ($this->operator !== 'cloudtalk') {
+            return null;
+        }
+
+        $agentId = data_get($this->config, 'agent_id');
+
+        return data_get($this->config, 'agent_name')
+            ?: data_get($this->config, 'agent_label')
+            ?: ($agentId ? "Agent CloudTalk #{$agentId}" : null);
+    }
+
+
     // Relationships
 
     /**

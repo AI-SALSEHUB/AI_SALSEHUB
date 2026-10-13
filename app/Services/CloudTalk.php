@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Line;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class CloudTalk
@@ -12,6 +13,7 @@ class CloudTalk
     protected const AGENTS_URL = 'https://my.cloudtalk.io/api/agents/index.json';
     protected const CALL_HISTORY_URL = 'https://my.cloudtalk.io/api/calls/index.json';
     protected const MAKE_CALL_URL = 'https://my.cloudtalk.io/api/calls/create.json';
+    protected const SEND_SMS_URL = 'https://my.cloudtalk.io/api/sms/send.json';
     protected const RECORDING_URL = 'https://my.cloudtalk.io/api/calls/recording/%s.json';
 
     /**
@@ -107,6 +109,62 @@ class CloudTalk
 
         if (!$response->successful() || $cloudTalkStatus !== 200) {
             $message = data_get($body, 'responseData.message');
+            throw new RuntimeException(
+                $this->messageForStatus($cloudTalkStatus, $message),
+                $cloudTalkStatus ?: $response->status()
+            );
+        }
+
+        return is_array($body) ? $body : [];
+    }
+
+    /**
+     * Send an outbound SMS through the CloudTalk sender number configured
+     * on the agent line.
+     */
+    public function sendSms(Line $line, string $recipient, string $message): array
+    {
+        $config = $line->config ?: [];
+
+        $this->validateCredentials($config);
+
+        $sender = $this->formatSmsNumber((string) data_get($config, 'numero'));
+        $recipient = $this->formatSmsNumber($recipient);
+        $message = trim($message);
+
+        if ($message === '') {
+            throw new RuntimeException('Le message SMS CloudTalk est vide.', 422);
+        }
+
+        try {
+            $response = Http::timeout(30)
+                ->acceptJson()
+                ->asJson()
+                ->withBasicAuth($config['api_key_id'], $config['api_key_secret'])
+                ->post(self::SEND_SMS_URL, [
+                    'recipient' => $recipient,
+                    'sender' => $sender,
+                    'message' => $message,
+                ]);
+        } catch (ConnectionException $e) {
+            throw new RuntimeException("Impossible de joindre l'API CloudTalk.", 503);
+        }
+
+        $body = $response->json();
+        $cloudTalkStatus = (int) data_get($body, 'responseData.status', $response->status());
+        $success = data_get($body, 'responseData.success', data_get($body, 'success', true));
+
+        if (
+            !$response->successful() ||
+            !in_array($cloudTalkStatus, [200, 201], true) ||
+            $success === false ||
+            $success === 'false'
+        ) {
+            $data = data_get($body, 'responseData.data');
+            $message = data_get($body, 'responseData.message')
+                ?: data_get($body, 'responseData.data.message')
+                ?: (is_string($data) ? $data : null);
+
             throw new RuntimeException(
                 $this->messageForStatus($cloudTalkStatus, $message),
                 $cloudTalkStatus ?: $response->status()
@@ -239,14 +297,43 @@ class CloudTalk
         return preg_replace('/\D+/', '', (string) $number);
     }
 
+    protected function formatSmsNumber(string $number): string
+    {
+        $number = preg_replace('/[\s().-]+/', '', trim($number));
+
+        if (!preg_match('/^\+[1-9]\d{1,14}$/', $number)) {
+            throw new RuntimeException('Le numero SMS CloudTalk doit etre au format E.164, par exemple +33612345678.', 406);
+        }
+
+        return $number;
+    }
+
     protected function normalizeCallHistoryItem(array $item): array
     {
         $cdr = data_get($item, 'Cdr', []);
         $id = (string) data_get($cdr, 'id', '');
+        $direction = $this->normalizeCallDirection(
+            data_get($cdr, 'type')
+                ?: data_get($cdr, 'direction')
+                ?: data_get($item, 'Call.direction')
+                ?: data_get($item, 'direction')
+        );
         $recorded = filter_var(
             data_get($cdr, 'recorded', false),
             FILTER_VALIDATE_BOOLEAN
         );
+        $hasVoicemail = $this->cloudTalkHistoryHasVoicemail($cdr, $item);
+        $status = $this->normalizeCallHistoryStatus(
+            $cdr,
+            $item,
+            $direction,
+            $hasVoicemail
+        );
+        $voicemailLink = data_get($cdr, 'voicemail_link')
+            ?: data_get($cdr, 'voicemail_url')
+            ?: data_get($cdr, 'voicemail_recording_link')
+            ?: data_get($item, 'Voicemail.recording_link')
+            ?: data_get($item, 'Voicemail.url');
 
         return [
             'id' => $id,
@@ -256,8 +343,14 @@ class CloudTalk
                 ?: data_get($item, 'Call.call_uuid')
                 ?: data_get($item, 'uuid')
                 ?: data_get($item, 'call_uuid'),
-            'type' => data_get($cdr, 'type'),
-            'status' => data_get($cdr, 'status'),
+            'type' => $direction ?: data_get($cdr, 'type'),
+            'direction' => $direction,
+            'status' => $status,
+            'cloudtalk_status' => data_get($cdr, 'status'),
+            'outcome' => $status,
+            'missed' => $status === 'missed',
+            'has_voicemail' => $hasVoicemail,
+            'voicemail_link' => $voicemailLink,
             'number' => data_get($cdr, 'public_external')
                 ?: data_get($cdr, 'external_number')
                 ?: data_get($item, 'Call.external_number'),
@@ -279,6 +372,108 @@ class CloudTalk
             'contact' => data_get($item, 'Contact'),
             'raw' => $item,
         ];
+    }
+
+    protected function normalizeCallDirection(?string $direction): ?string
+    {
+        return match (strtolower((string) $direction)) {
+            'inbound', 'incoming', 'in' => 'incoming',
+            'outbound', 'outgoing', 'out' => 'outgoing',
+            'internal' => 'internal',
+            default => null,
+        };
+    }
+
+    protected function normalizeCallHistoryStatus(
+        array $cdr,
+        array $item,
+        ?string $direction,
+        bool $hasVoicemail
+    ): ?string {
+        $rawStatus = data_get($cdr, 'status')
+            ?: data_get($cdr, 'result')
+            ?: data_get($cdr, 'disposition')
+            ?: data_get($item, 'Call.status')
+            ?: data_get($item, 'status');
+
+        if ($hasVoicemail) {
+            return 'voicemail';
+        }
+
+        $statusText = strtolower((string) $rawStatus);
+
+        if ($this->containsAny($statusText, [
+            'voicemail',
+            'voice_mail',
+            'voice mail',
+            'messagerie',
+        ])) {
+            return 'voicemail';
+        }
+
+        if ($this->containsAny($statusText, [
+            'missed',
+            'no_answer',
+            'not_answered',
+            'unanswered',
+            'abandoned',
+            'lost',
+        ])) {
+            return 'missed';
+        }
+
+        if (
+            $direction === 'incoming' &&
+            !$this->hasPositiveDuration(data_get($cdr, 'talking_time')) &&
+            !data_get($cdr, 'answered_at') &&
+            $this->containsAny($statusText, ['busy', 'failed', 'reject', 'cancel'])
+        ) {
+            return 'missed';
+        }
+
+        return $rawStatus ? (string) $rawStatus : null;
+    }
+
+    protected function cloudTalkHistoryHasVoicemail(array $cdr, array $item): bool
+    {
+        foreach ([
+            data_get($cdr, 'has_voicemail'),
+            data_get($cdr, 'voicemail'),
+            data_get($cdr, 'is_voicemail'),
+        ] as $value) {
+            if ($value !== null && $value !== '' && filter_var($value, FILTER_VALIDATE_BOOLEAN)) {
+                return true;
+            }
+        }
+
+        return (bool) (
+            data_get($item, 'Voicemail.id') ||
+            data_get($item, 'Voicemail.recording_link') ||
+            data_get($cdr, 'voicemail_link') ||
+            data_get($cdr, 'voicemail_url') ||
+            data_get($cdr, 'voicemail_recording_link') ||
+            $this->containsAny(strtolower((string) data_get($cdr, 'status')), [
+                'voicemail',
+                'voice_mail',
+                'voice mail',
+            ])
+        );
+    }
+
+    protected function hasPositiveDuration($value): bool
+    {
+        return is_numeric($value) && (float) $value > 0;
+    }
+
+    protected function containsAny(string $text, array $needles): bool
+    {
+        foreach ($needles as $needle) {
+            if ($needle !== '' && str_contains($text, $needle)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     protected function validateConfig(array $config): void
@@ -314,6 +509,7 @@ class CloudTalk
     {
         return match ($status) {
             401 => 'Identifiants API CloudTalk invalides.',
+            402 => 'Credit CloudTalk insuffisant pour envoyer le SMS.',
             403 => 'Agent CloudTalk non connecte.',
             404 => 'Ressource CloudTalk introuvable.',
             406 => 'Donnees CloudTalk invalides. Verifiez le numero E.164 et l agent.',

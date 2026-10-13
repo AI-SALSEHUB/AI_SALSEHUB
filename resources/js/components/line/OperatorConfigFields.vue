@@ -4,7 +4,7 @@
             v-for="field in fields"
             :key="field.key"
             :label="field.label"
-            required
+            :required="fieldRequired(field)"
             v-slot="{ label }"
         >
             <div
@@ -33,7 +33,7 @@
                 v-if="field.type === 'select'"
                 v-model="config[field.key]"
                 :disabled="fieldDisabled(field)"
-                required
+                :required="fieldRequired(field)"
             >
                 <option value="" disabled></option>
                 <option
@@ -69,9 +69,19 @@
                 :type="field.type"
                 :placeholder="label + ' ...'"
                 v-model="config[field.key]"
-                required
+                :required="fieldRequired(field)"
             />
         </v-field>
+
+        <div v-if="operator === 'cloudtalk'">
+            <button
+                type="button"
+                class="hc-button-secondary hc-line-cloudtalk-webhook-button"
+                @click.prevent="openCloudtalkWebhookModal"
+            >
+                <span>comment recevoir des SMS</span>
+            </button>
+        </div>
 
         <kavkom-diagnostic v-if="operator === 'kavkom'" :config="config" />
     </div>
@@ -151,10 +161,54 @@
     background: #ffebee;
     color: #c62828;
 }
+
+.hc-line-cloudtalk-webhook {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 10px;
+    margin-top: 5px;
+    border: 1px solid #d6e4f0;
+    border-radius: 6px;
+    background: #f4f9ff;
+}
+
+.hc-line-cloudtalk-webhook-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #12a0f3;
+}
+
+.hc-line-cloudtalk-webhook-label span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hc-line-cloudtalk-webhook-button {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+}
+
+.dark .hc-line-cloudtalk-webhook {
+    border-color: #334155;
+    background: #1e293b;
+}
 </style>
 
 <script>
 import { mapGetters } from "vuex";
+import store from "@/store";
+import { OPEN_MODAL } from "@/actions/modal";
 import lineService from "@/apis/project/line";
 import KavkomDiagnostic from "./KavkomDiagnostic.vue";
 
@@ -205,6 +259,10 @@ export default {
                     this.fetchingCloudtalkAgents ||
                     this.cloudtalkAgents.length === 0)
             );
+        },
+
+        fieldRequired(field) {
+            return field.required !== false;
         },
 
         fieldOptions(field) {
@@ -362,6 +420,10 @@ export default {
         setCloudtalkError(message) {
             this.cloudtalkMessage = message;
             this.cloudtalkMessageType = "error";
+        },
+
+        openCloudtalkWebhookModal() {
+            store.commit(OPEN_MODAL, "setting-cloudtalk");
         },
     },
 

@@ -431,18 +431,18 @@ class CloudTalkController extends Controller
 
     protected function directionFamily(string $direction): string
     {
-        return match ($direction) {
-            'inbound', 'incoming' => 'incoming',
-            'outbound', 'outgoing' => 'outgoing',
+        return match (strtolower($direction)) {
+            'inbound', 'incoming', 'in' => 'incoming',
+            'outbound', 'outgoing', 'out' => 'outgoing',
             default => $direction,
         };
     }
 
     protected function cloudTalkDirection(?string $direction): ?string
     {
-        return match ($direction) {
-            'outbound', 'outgoing' => 'outgoing',
-            'inbound', 'incoming' => 'incoming',
+        return match (strtolower((string) $direction)) {
+            'outbound', 'outgoing', 'out' => 'outgoing',
+            'inbound', 'incoming', 'in' => 'incoming',
             'internal' => 'internal',
             default => null,
         };

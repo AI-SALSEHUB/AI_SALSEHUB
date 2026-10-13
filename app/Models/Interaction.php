@@ -46,6 +46,8 @@ class Interaction extends Model
      */
     protected $appends = [
         'audio',
+        'call_direction',
+        'call_outcome',
         'duration',
     ];
 
@@ -88,6 +90,52 @@ class Interaction extends Model
         return $duration >= 0 ? $duration : null;
     }
 
+    public function getCallDirectionAttribute(): ?string
+    {
+        if ($this->source === 'cloudtalk' && is_array($this->data)) {
+            $direction = data_get($this->data, 'direction')
+                ?: data_get($this->data, 'cloudtalk_call.direction')
+                ?: data_get($this->data, 'cloudtalk_call.type')
+                ?: data_get($this->data, 'cloudtalk_history.Cdr.direction')
+                ?: data_get($this->data, 'cloudtalk_history.Cdr.type');
+
+            $direction = $this->normalizeCallDirection($direction);
+
+            if ($direction) {
+                return $direction;
+            }
+        }
+
+        if ($this->from_user !== null) {
+            return $this->from_user ? 'outgoing' : 'incoming';
+        }
+
+        return null;
+    }
+
+    public function getCallOutcomeAttribute(): ?string
+    {
+        if ($this->source === 'cloudtalk' && is_array($this->data)) {
+            if ($this->hasCloudTalkVoicemail()) {
+                return 'voicemail';
+            }
+
+            $outcome = data_get($this->data, 'outcome')
+                ?: data_get($this->data, 'cloudtalk_call.outcome')
+                ?: data_get($this->data, 'cloudtalk_call.status')
+                ?: data_get($this->data, 'cloudtalk_history.Cdr.status')
+                ?: $this->status;
+
+            $outcome = $this->normalizeCallOutcome($outcome);
+
+            if ($outcome) {
+                return $outcome;
+            }
+        }
+
+        return $this->normalizeCallOutcome($this->status);
+    }
+
     public function cloudTalkCallId(): ?string
     {
         if ($this->source !== 'cloudtalk' || !is_array($this->data)) {
@@ -128,6 +176,82 @@ class Interaction extends Model
         );
     }
 
+    protected function hasCloudTalkVoicemail(): bool
+    {
+        if ($this->source !== 'cloudtalk' || !is_array($this->data)) {
+            return false;
+        }
+
+        foreach ([
+            data_get($this->data, 'has_voicemail'),
+            data_get($this->data, 'voicemail'),
+            data_get($this->data, 'cloudtalk_call.has_voicemail'),
+            data_get($this->data, 'cloudtalk_call.voicemail'),
+            data_get($this->data, 'cloudtalk_history.Cdr.has_voicemail'),
+            data_get($this->data, 'cloudtalk_history.Cdr.voicemail'),
+        ] as $value) {
+            if ($value !== null && $value !== '' && filter_var($value, FILTER_VALIDATE_BOOLEAN)) {
+                return true;
+            }
+        }
+
+        return (bool) (
+            data_get($this->data, 'voicemail_link') ||
+            data_get($this->data, 'voicemail_url') ||
+            data_get($this->data, 'cloudtalk_call.voicemail_link') ||
+            data_get($this->data, 'cloudtalk_call.voicemail_url') ||
+            data_get($this->data, 'cloudtalk_history.Cdr.voicemail_link') ||
+            data_get($this->data, 'cloudtalk_history.Cdr.voicemail_url') ||
+            $this->containsAny(
+                strtolower((string) data_get($this->data, 'cloudtalk_history.Cdr.status')),
+                ['voicemail', 'voice_mail', 'voice mail']
+            )
+        );
+    }
+
+    protected function normalizeCallDirection(?string $direction): ?string
+    {
+        return match (strtolower((string) $direction)) {
+            'inbound', 'incoming', 'in' => 'incoming',
+            'outbound', 'outgoing', 'out' => 'outgoing',
+            'internal' => 'internal',
+            default => null,
+        };
+    }
+
+    protected function normalizeCallOutcome(?string $outcome): ?string
+    {
+        $outcome = strtolower((string) $outcome);
+
+        if ($this->containsAny($outcome, ['voicemail', 'voice_mail', 'voice mail'])) {
+            return 'voicemail';
+        }
+
+        if ($this->containsAny($outcome, [
+            'missed',
+            'no_answer',
+            'not_answered',
+            'unanswered',
+            'abandoned',
+            'lost',
+        ])) {
+            return 'missed';
+        }
+
+        return null;
+    }
+
+    protected function containsAny(string $text, array $needles): bool
+    {
+        foreach ($needles as $needle) {
+            if ($needle !== '' && str_contains($text, $needle)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /**
      * The attributes that should be cast.
      *
@@ -135,6 +259,7 @@ class Interaction extends Model
      */
     protected $casts = [
         'data' => 'json',
+        'from_user' => 'boolean',
     ];
 
 

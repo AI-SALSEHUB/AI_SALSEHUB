@@ -36,21 +36,24 @@ class InteractionController extends Controller
     {
         abort_unless(auth()->user()->can('prospectInteractionAdd', $project), 404);
 
+        $values = $request->only(
+            'data',
+            'ended_at',
+            'number',
+            'from_number',
+            'source',
+            'status',
+            'started_at'
+        );
+        $values['creator_id'] = auth()->id();
+        $values['from_user'] = $request->has('from_user')
+            ? $request->boolean('from_user')
+            : true;
+
         $interaction = $prospect
             ->interactions()
             ->create(array_merge(
-                $request->only(
-                    'data',
-                    'ended_at',
-                    'number',
-                    'from_number',
-                    'source',
-                    'status',
-                    'started_at'
-                ), [
-                    'creator_id' => auth()->id(),
-                    'from_user' => 1,
-                ],
+                $values,
                 $this->storeFile($request, $project)
             ));
 
@@ -105,6 +108,7 @@ class InteractionController extends Controller
                 $request->only(
                 'data',
                 'ended_at',
+                'from_user',
                 'number',
                 'from_number',
                 'source',

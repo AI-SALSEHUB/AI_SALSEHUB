@@ -33,6 +33,8 @@
                 :number="interaction.number"
                 :calling="callingCloudtalk"
                 :loading="cloudtalkLoading"
+                :agent-name="cloudtalkAgentName"
+                :retry-visible="cloudtalkLoginRequired"
                 :lookup-loading="cloudtalkLookupLoading"
                 :lookup-number="cloudtalkLookup.number"
                 :prospect="cloudtalkCallProspect"
@@ -52,6 +54,8 @@
                 @hangup-call="cloudtalkCallHangup"
                 @answered-call="cloudtalkCallAnswered"
                 @contact-info="cloudtalkCallContactInfo"
+                @back="backFromCloudtalk"
+                @login-cloudtalk="loginCloudtalk"
                 @create-prospect="createCloudtalkProspect"
                 @context-panel-visible="
                     cloudtalkContextPanelVisible = $event
@@ -89,7 +93,7 @@
                         :aircall-webhook-url="aircallWebhookURL"
                         :updating-phone-number="updatingPhoneNumber"
                         :updating-mobile-phone-number="updatingMobilePhoneNumber"
-                        @back="tab = 0"
+                        @back="backFromInteractionFrame"
                         @aircall-setting="aircallTab = 1"
                         @aircall-back-setting="aircallTab = 0"
                         @copy-aircall-webhook="copyAircallWebhookURLToClipboard"
@@ -133,15 +137,16 @@
 }
 
 .hc-prospect-interaction-cloudtalk-panel {
-    --cloudtalk-phone-width: 440px;
+    --cloudtalk-phone-width: 300px;
     --cloudtalk-context-width: 320px;
     position: absolute;
-    top: 42px;
+    top: 0;
     right: 0;
     bottom: 0;
     left: 0;
     z-index: 5;
     display: flex;
+    flex-direction: column;
     background: #ffffff;
     opacity: 0;
     pointer-events: none;
@@ -163,6 +168,81 @@
     opacity: 1;
     pointer-events: auto;
     visibility: visible;
+}
+
+.hc-prospect-interaction-cloudtalk-back {
+    flex: 0 0 auto;
+}
+
+.hc-prospect-interaction-cloudtalk-content {
+    position: relative;
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.hc-prospect-interaction-cloudtalk-retry {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 3;
+    display: flex;
+    width: var(--cloudtalk-phone-width);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.9);
+    text-align: center;
+}
+
+.hc-prospect-interaction-cloudtalk-retry-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #333333;
+}
+
+.hc-prospect-interaction-cloudtalk-retry-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    max-width: 220px;
+}
+
+.hc-prospect-interaction-cloudtalk-retry-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 34px;
+    padding: 8px 12px;
+    border: 1px solid #12a0f3;
+    border-radius: 4px;
+    background: #12a0f3;
+    color: #ffffff;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.hc-prospect-interaction-cloudtalk-retry-button.secondary {
+    border-color: #dddddd;
+    background: #ffffff;
+    color: #333333;
+}
+
+.hc-prospect-interaction-cloudtalk-retry-button.secondary:hover {
+    background: #f5f5f5;
+}
+
+.hc-prospect-interaction-cloudtalk-retry-button:disabled {
+    border-color: #bbbbbb;
+    background: #bbbbbb;
+    cursor: wait;
 }
 
 .hc-prospect-interaction-cloudtalk-phone {
@@ -404,7 +484,7 @@ import {
     UPDATE_PROSPECT,
 } from "@/actions/project/prospect";
 import { SET_INTERACTION_PROSPECT } from "@/actions/project/prospect/interaction";
-import { OPEN_LEFT_SLIDE } from "@/actions/slide";
+import { CLOSE_SLIDE, OPEN_LEFT_SLIDE } from "@/actions/slide";
 import {
     FETCH_PROSPECT_INTERACTIONS,
     ADD_PROSPECT_INTERACTION,
@@ -450,6 +530,7 @@ export default {
             cloudtalkLoginRequired: false,
             cloudtalkPhoneVisible: false,
             cloudtalkContextPanelVisible: false,
+            cloudtalkReturnProspect: null,
             cloudtalkEventTimeout: null,
             cloudtalkCreatingProspect: false,
             cloudtalkLookup: {
@@ -490,6 +571,7 @@ export default {
         newInteraction() {
             return {
                 source: "telephone",
+                from_user: true,
                 number: "",
                 status: "new",
                 data: {},
@@ -743,6 +825,7 @@ export default {
         },
 
         async interactionViaCloudtalk(number) {
+            this.rememberCloudtalkReturnProspect();
             this.tab = 1;
             this.frameTab = 5;
             this.cloudtalkPhoneVisible = true;
@@ -750,7 +833,9 @@ export default {
             this.cloudtalkLoginRequired = false;
             this.interaction = this.newInteraction();
             this.interaction.source = "cloudtalk";
+            this.interaction.from_user = true;
             this.interaction.number = number;
+            this.interaction.data = { direction: "outgoing" };
             await this.addInteraction();
             this.fetchCloudtalkCallContext({ external_number: number });
             this.makeCloudtalkCall();
@@ -791,15 +876,20 @@ export default {
 
                 const callId = this.cloudtalkCallId(response, false);
                 this.interaction.status = "initiated";
+                this.interaction.from_user = true;
                 this.interaction.data = {
                     ...(this.interaction.data || {}),
                     cloudtalk: response.responseData,
+                    direction: "outgoing",
                     ...(callId ? { id: callId, call_id: callId } : {}),
                 };
 
                 if (response.interaction) {
                     this.interaction = response.interaction;
-                    store.commit(UPDATE_PROSPECT_INTERACTION, response.interaction);
+                    store.commit(UPDATE_PROSPECT_INTERACTION, {
+                        prospectId: response.interaction.prospect_id,
+                        interaction: response.interaction,
+                    });
                 } else {
                     await this.updateInteraction();
                 }
@@ -849,6 +939,7 @@ export default {
         },
 
         showCloudtalkPhone() {
+            this.rememberCloudtalkReturnProspect();
             this.clearCloudtalkEventTimeout();
             this.cloudtalkWaitingForEvent = false;
             this.cloudtalkLoginRequired = false;
@@ -874,27 +965,17 @@ export default {
         prepareCloudtalkInteractionFromIframe(callInfos = {}) {
             this.syncIncomingCloudtalkProspect(callInfos);
 
-            const callId =
-                callInfos.call_uuid || callInfos.call_id || callInfos.id;
-            const currentCallId =
-                this.interaction &&
-                this.interaction.data &&
-                (this.interaction.data.id ||
-                    this.interaction.data.call_uuid ||
-                    this.interaction.data.cdr_id ||
-                    this.interaction.data.call_id);
-
-            if (
-                this.interaction &&
-                this.interaction.source == "cloudtalk" &&
-                (!callId || !currentCallId || currentCallId == callId)
-            ) {
+            if (this.isCurrentCloudtalkInteractionEvent(callInfos)) {
+                this.setCloudtalkCallData(callInfos);
                 this.fetchCloudtalkCallContext(callInfos);
+                this.updateInteraction();
                 return;
             }
 
             this.interaction = this.newInteraction();
             this.interaction.source = "cloudtalk";
+            this.interaction.from_user =
+                this.cloudtalkCallDirection(callInfos) != "incoming";
             this.interaction.number = this.cloudtalkCallNumber(callInfos);
             this.interaction.from_number = callInfos.internal_number || "";
             this.setCloudtalkCallData(callInfos);
@@ -909,8 +990,55 @@ export default {
             this.frameTab = 5;
         },
 
+        loginCloudtalk() {
+            this.cloudtalkWaitingForEvent = false;
+            this.cloudtalkLoginRequired = false;
+            this.cloudtalkPhoneVisible = true;
+            this.tab = 1;
+            this.frameTab = 5;
+        },
+
         backFromCloudtalk() {
             this.resetCloudtalkSlideState();
+        },
+
+        backFromInteractionFrame() {
+            if (this.interactionProspect) {
+                this.tab = 0;
+                this.frameTab = 0;
+                return;
+            }
+
+            store.commit(CLOSE_SLIDE, true);
+        },
+
+        rememberCloudtalkReturnProspect() {
+            if (!this.cloudtalkReturnProspect && this.interactionProspect) {
+                this.cloudtalkReturnProspect = this.interactionProspect;
+            }
+        },
+
+        showDefaultInteractionView() {
+            const prospect =
+                this.interactionProspect ||
+                this.cloudtalkCallProspect ||
+                this.cloudtalkReturnProspect;
+
+            if (prospect) {
+                if (
+                    !this.interactionProspect ||
+                    this.interactionProspect.id != prospect.id
+                ) {
+                    this.setActiveInteractionProspect(prospect);
+                }
+
+                this.tab = 0;
+                this.frameTab = 0;
+                return;
+            }
+
+            this.tab = 1;
+            this.frameTab = 2;
         },
 
         resetCloudtalkSlideState() {
@@ -923,8 +1051,8 @@ export default {
             this.cloudtalkWaitingForEvent = false;
             this.cloudtalkLoginRequired = false;
             this.clearCloudtalkEventTimeout();
-            this.tab = 0;
-            this.frameTab = 0;
+            this.showDefaultInteractionView();
+            this.cloudtalkReturnProspect = null;
         },
 
         startCloudtalkEventTimeout() {
@@ -955,7 +1083,10 @@ export default {
 
         cloudtalkCallRinging(callInfos) {
             this.showCloudtalkPhone();
-            this.interaction.status = "ringing";
+            this.interaction.status = this.cloudtalkCallStatus(
+                callInfos,
+                "ringing"
+            );
             this.setCloudtalkCallData(callInfos);
             this.fetchCloudtalkCallContext(callInfos);
             this.updateInteraction();
@@ -963,7 +1094,10 @@ export default {
 
         cloudtalkCallOutgoing(callInfos) {
             this.showCloudtalkPhone();
-            this.interaction.status = "initiated";
+            this.interaction.status = this.cloudtalkCallStatus(
+                callInfos,
+                "initiated"
+            );
             this.setCloudtalkCallData(callInfos);
             this.fetchCloudtalkCallContext(callInfos);
             this.updateInteraction();
@@ -971,38 +1105,41 @@ export default {
 
         cloudtalkCallAnswered(callInfos) {
             this.showCloudtalkPhone();
-            this.interaction.status = "answered";
+            this.interaction.status = this.cloudtalkCallStatus(
+                callInfos,
+                "answered"
+            );
             this.setCloudtalkCallData(callInfos);
             this.fetchCloudtalkCallContext(callInfos);
             this.updateInteraction();
         },
 
-        cloudtalkCallHangup(callInfos) {
+        async cloudtalkCallHangup(callInfos) {
             this.showCloudtalkPhone();
-            this.interaction.status = "hangup";
+            this.interaction.status = this.cloudtalkCallStatus(
+                callInfos,
+                "hangup"
+            );
             this.setCloudtalkCallData(callInfos);
             this.fetchCloudtalkCallContext(callInfos);
-            this.updateInteraction();
-            if (this.interactionProspect) {
-                this.nextInteraction();
-            }
+            await this.updateInteraction();
         },
 
-        cloudtalkCallEnded(callInfos) {
+        async cloudtalkCallEnded(callInfos) {
             this.showCloudtalkPhone();
-            this.interaction.status = "ended";
+            this.interaction.status = this.cloudtalkCallStatus(
+                callInfos,
+                "ended"
+            );
             this.setCloudtalkCallData(callInfos);
             this.fetchCloudtalkCallContext(callInfos);
-            this.updateInteraction();
+            await this.updateInteraction();
             this.scheduleCloudtalkHistorySync(
                 callInfos,
                 1,
                 this.cloneInteraction(this.interaction),
                 this.interactionProspect ? this.interactionProspect.id : null
             );
-            if (this.interactionProspect) {
-                this.nextInteraction();
-            }
         },
 
         cloudtalkCallContactInfo(callInfos) {
@@ -1059,14 +1196,29 @@ export default {
         setCloudtalkCallData(callInfos = {}) {
             const callId = this.cloudtalkCallId(callInfos);
             const number = this.cloudtalkCallNumber(callInfos, true);
+            const direction = this.cloudtalkCallDirection(callInfos);
+            const status = this.cloudtalkCallStatus(callInfos, "");
             const recordingUrl =
                 callInfos.recording_url ||
                 callInfos.recording ||
                 callInfos.recording_link ||
                 "";
+            const voicemailUrl =
+                callInfos.voicemail_url ||
+                callInfos.voicemail_link ||
+                callInfos.voicemail_recording_link ||
+                "";
 
             if (number) {
                 this.interaction.number = number;
+            }
+
+            if (direction) {
+                this.interaction.from_user = direction != "incoming";
+            }
+
+            if (callInfos.internal_number) {
+                this.interaction.from_number = callInfos.internal_number;
             }
 
             if (callInfos.started_at || callInfos.startedAt) {
@@ -1089,11 +1241,117 @@ export default {
                 ...(callInfos.direction
                     ? { direction: callInfos.direction }
                     : {}),
+                ...(direction ? { direction } : {}),
+                ...(status ? { outcome: status } : {}),
                 ...(recordingUrl ? { recording_url: recordingUrl } : {}),
+                ...(voicemailUrl ? { voicemail_url: voicemailUrl } : {}),
+                ...(status == "missed" ? { missed_call: true } : {}),
+                ...(status == "voicemail" ? { has_voicemail: true } : {}),
                 ...(callInfos.recorded !== undefined
                     ? { recorded: callInfos.recorded }
                     : {}),
             };
+        },
+
+        cloudtalkCallDirection(callInfos = {}, fallback = "") {
+            const direction = String(
+                callInfos.direction ||
+                    callInfos.type ||
+                    callInfos.call_type ||
+                    callInfos.data?.direction ||
+                    callInfos.data?.type ||
+                    callInfos.cloudtalk_call?.direction ||
+                    callInfos.cloudtalk_call?.type ||
+                    fallback ||
+                    ""
+            ).toLowerCase();
+
+            if (["inbound", "incoming", "in"].includes(direction)) {
+                return "incoming";
+            }
+
+            if (["outbound", "outgoing", "out"].includes(direction)) {
+                return "outgoing";
+            }
+
+            return "";
+        },
+
+        cloudtalkCallStatus(callInfos = {}, fallback = "") {
+            const status = String(
+                callInfos.status ||
+                    callInfos.outcome ||
+                    callInfos.result ||
+                    callInfos.disposition ||
+                    callInfos.data?.status ||
+                    callInfos.cloudtalk_status ||
+                    ""
+            ).toLowerCase();
+
+            if (
+                this.cloudtalkCallHasVoicemail(callInfos) ||
+                ["voicemail", "voice_mail", "voice mail", "messagerie"].some(
+                    (value) => status.includes(value)
+                )
+            ) {
+                return "voicemail";
+            }
+
+            if (
+                [
+                    "missed",
+                    "no_answer",
+                    "not_answered",
+                    "unanswered",
+                    "abandoned",
+                    "lost",
+                ].some((value) => status.includes(value))
+            ) {
+                return "missed";
+            }
+
+            if (
+                this.cloudtalkCallDirection(callInfos) == "incoming" &&
+                !callInfos.answered_at &&
+                !this.hasCloudtalkPositiveDuration(callInfos.talking_time) &&
+                ["busy", "failed", "reject", "cancel"].some((value) =>
+                    status.includes(value)
+                )
+            ) {
+                return "missed";
+            }
+
+            return fallback;
+        },
+
+        cloudtalkCallHasVoicemail(callInfos = {}) {
+            if (
+                callInfos.voicemail_url ||
+                callInfos.voicemail_link ||
+                callInfos.voicemail_recording_link ||
+                callInfos.data?.voicemail_url ||
+                callInfos.cloudtalk_call?.voicemail_url
+            ) {
+                return true;
+            }
+
+            return [
+                callInfos.has_voicemail,
+                callInfos.voicemail,
+                callInfos.is_voicemail,
+                callInfos.data?.has_voicemail,
+                callInfos.cloudtalk_call?.has_voicemail,
+            ].some((value) =>
+                [true, 1, "1", "true", "yes"].includes(
+                    typeof value == "string" ? value.toLowerCase() : value
+                )
+            );
+        },
+
+        hasCloudtalkPositiveDuration(value) {
+            const duration = Number(value);
+
+            return !Number.isNaN(duration) && duration > 0;
         },
 
         cloudtalkCallId(callInfos = {}, useFallback = false) {
@@ -1107,18 +1365,22 @@ export default {
                 {};
 
             return (
+                callInfos.uuid ||
                 callInfos.call_uuid ||
                 callInfos.call_id ||
                 callInfos.cdr_id ||
                 callInfos.id ||
+                data.uuid ||
                 data.call_uuid ||
                 data.call_id ||
                 data.cdr_id ||
                 data.id ||
+                call.uuid ||
                 call.call_uuid ||
                 call.call_id ||
                 call.cdr_id ||
                 call.id ||
+                cloudtalkCall.uuid ||
                 cloudtalkCall.call_uuid ||
                 cloudtalkCall.call_id ||
                 cloudtalkCall.cdr_id ||
@@ -1156,19 +1418,60 @@ export default {
                 return "";
             }
 
-            const currentCallId =
-                (this.interaction.data &&
-                    (this.interaction.data.call_id ||
-                        this.interaction.data.cdr_id ||
-                        this.interaction.data.id)) ||
-                "";
-            const eventCallId = this.cloudtalkCallId(callInfos, false);
-
-            if (currentCallId && eventCallId && currentCallId != eventCallId) {
+            if (!this.isCurrentCloudtalkInteractionEvent(callInfos)) {
                 return "";
             }
 
             return this.interaction.number;
+        },
+
+        isCurrentCloudtalkInteractionEvent(callInfos = {}) {
+            if (!this.interaction || this.interaction.source != "cloudtalk") {
+                return false;
+            }
+
+            const eventCallId = this.cloudtalkCallId(callInfos, false);
+            const normalizedEventCallId = eventCallId ? String(eventCallId) : "";
+            const currentCallIds = this.currentCloudtalkCallIds();
+
+            if (
+                !normalizedEventCallId ||
+                currentCallIds.includes(normalizedEventCallId)
+            ) {
+                return true;
+            }
+
+            // The iframe can emit a UUID while the REST make-call response has
+            // not yet linked that UUID to the CRM interaction. The first iframe
+            // event after the click still belongs to the current CRM call.
+            return this.callingCloudtalk || this.cloudtalkWaitingForEvent;
+        },
+
+        currentCloudtalkCallIds() {
+            const data =
+                this.interaction && this.interaction.data
+                    ? this.interaction.data
+                    : {};
+
+            return [
+                data.uuid,
+                data.call_uuid,
+                data.call_id,
+                data.cdr_id,
+                data.id,
+                data.cloudtalk?.uuid,
+                data.cloudtalk?.call_uuid,
+                data.cloudtalk?.call_id,
+                data.cloudtalk?.cdr_id,
+                data.cloudtalk?.id,
+                data.cloudtalk_call?.uuid,
+                data.cloudtalk_call?.call_uuid,
+                data.cloudtalk_call?.call_id,
+                data.cloudtalk_call?.cdr_id,
+                data.cloudtalk_call?.id,
+            ]
+                .filter((value) => value !== undefined && value !== null && value !== "")
+                .map((value) => String(value));
         },
 
         cloudtalkCallNumber(callInfos = {}, useFallback = false) {
@@ -1202,16 +1505,26 @@ export default {
         },
 
         cloudtalkCandidateNumber(callInfos = {}) {
-            return (
-                callInfos.external_number ||
+            const directNumber =
                 callInfos.customer_number ||
                 callInfos.contact_phone ||
                 callInfos.phone_number ||
                 callInfos.number ||
+                (this.cloudtalkCallDirection(callInfos) == "outgoing"
+                    ? callInfos.to
+                    : callInfos.from) ||
                 callInfos.from ||
                 callInfos.to ||
-                ""
-            );
+                "";
+
+            if (directNumber) {
+                return directNumber;
+            }
+
+            // In the CloudTalk iframe message payload, external_number can be
+            // a CloudTalk-side identifier/line number, not the called person.
+            // Only trust it when it is not paired with internal_number.
+            return callInfos.internal_number ? "" : callInfos.external_number || "";
         },
 
         async fetchCloudtalkCallContext(callInfos = {}) {
@@ -1349,15 +1662,12 @@ export default {
             prospectId = null
         ) {
             const targetInteraction = interaction || this.interaction;
-            const targetProspectId =
+            let targetProspectId =
                 prospectId ||
+                targetInteraction.prospect_id ||
                 (this.interactionProspect ? this.interactionProspect.id : null);
 
-            if (
-                !targetInteraction ||
-                targetInteraction.source != "cloudtalk" ||
-                !targetProspectId
-            ) {
+            if (!targetInteraction || targetInteraction.source != "cloudtalk") {
                 return;
             }
 
@@ -1376,9 +1686,14 @@ export default {
                 ended_at: targetInteraction.ended_at,
                 direction:
                     callInfos.direction ||
+                    callInfos.type ||
                     (targetInteraction.data || {}).direction ||
                     null,
             };
+
+            if (!params.number && !params.call_id) {
+                return;
+            }
 
             if (this.cloudtalkLine) {
                 params.line_id = this.cloudtalkLine.id;
@@ -1406,6 +1721,49 @@ export default {
                     data.call,
                     targetInteraction
                 );
+
+                if (!targetProspectId) {
+                    await this.fetchCloudtalkCallContext(data.call);
+                    targetProspectId = targetInteraction.prospect_id ||
+                        (this.interactionProspect
+                        ? this.interactionProspect.id
+                        : null);
+
+                    if (
+                        !updatedInteraction.id &&
+                        this.interaction &&
+                        this.interaction.id &&
+                        this.isCurrentCloudtalkInteractionEvent(data.call)
+                    ) {
+                        updatedInteraction.id = this.interaction.id;
+                    }
+                }
+
+                if (!targetProspectId) {
+                    return;
+                }
+
+                if (!updatedInteraction.id) {
+                    const { data: savedInteraction } =
+                        await ProspectInteractionService.create(
+                            this.project.slug,
+                            targetProspectId,
+                            updatedInteraction
+                        );
+
+                    if (this.isCurrentCloudtalkInteractionEvent(data.call)) {
+                        this.interaction = savedInteraction;
+                    }
+
+                    if (
+                        this.interactionProspect &&
+                        this.interactionProspect.id == targetProspectId
+                    ) {
+                        await this.fetchInteractions();
+                    }
+
+                    return;
+                }
 
                 if (updatedInteraction.id) {
                     const { data: savedInteraction } =
@@ -1445,27 +1803,46 @@ export default {
         applyCloudtalkHistory(call, interaction = null) {
             const targetInteraction = interaction || this.interaction;
             const existingData = targetInteraction.data || {};
+            const direction = this.cloudtalkCallDirection(
+                call,
+                existingData.direction || ""
+            );
+            const status = this.cloudtalkCallStatus(
+                call,
+                call.status || targetInteraction.status
+            );
 
             targetInteraction.data = {
                 ...existingData,
                 call_id: call.id,
                 cdr_id: call.id,
+                direction: direction || existingData.direction,
+                outcome: status || existingData.outcome,
                 recorded: call.recorded,
                 recording_url: call.recording_url || existingData.recording_url,
                 recording_link:
                     call.recording_link || existingData.recording_link,
+                voicemail_link:
+                    call.voicemail_link || existingData.voicemail_link,
+                ...(call.missed ? { missed_call: true } : {}),
+                ...(call.has_voicemail ? { has_voicemail: true } : {}),
                 cloudtalk_call: call,
                 cloudtalk_history: call.raw,
             };
 
             targetInteraction.number = call.number || targetInteraction.number || "";
+            targetInteraction.prospect_id =
+                targetInteraction.prospect_id || call.prospect_id || null;
             targetInteraction.from_number =
                 call.from_number || targetInteraction.from_number || "";
+            if (direction) {
+                targetInteraction.from_user = direction != "incoming";
+            }
             targetInteraction.started_at =
                 call.started_at || targetInteraction.started_at || null;
             targetInteraction.ended_at =
                 call.ended_at || targetInteraction.ended_at || null;
-            targetInteraction.status = call.status || targetInteraction.status;
+            targetInteraction.status = status || targetInteraction.status;
 
             return targetInteraction;
         },
@@ -1488,9 +1865,7 @@ export default {
         },
 
         isCloudtalkIncomingCall(callInfos = {}) {
-            return ["inbound", "incoming"].includes(
-                String(callInfos.direction || callInfos.type || "").toLowerCase()
-            );
+            return this.cloudtalkCallDirection(callInfos) == "incoming";
         },
 
         syncIncomingCloudtalkProspect(callInfos = {}) {
@@ -1588,8 +1963,16 @@ export default {
          *
          */
         async updateInteraction() {
-            if (!this.interaction || !this.interactionProspect) {
-                return;
+            if (!this.interaction) {
+                return null;
+            }
+
+            if (!this.interaction.prospect_id && this.interactionProspect) {
+                this.interaction.prospect_id = this.interactionProspect.id;
+            }
+
+            if (!this.interaction.prospect_id && !this.interactionProspect) {
+                return null;
             }
 
             if (!this.interaction.id) {
@@ -1597,19 +1980,28 @@ export default {
                     ADD_PROSPECT_INTERACTION,
                     this.interaction
                 );
-                return;
+                return this.interaction;
             }
 
-            store.dispatch(UPDATE_PROSPECT_INTERACTION, this.interaction);
+            this.interaction = await store.dispatch(
+                UPDATE_PROSPECT_INTERACTION,
+                this.interaction
+            );
+
+            return this.interaction;
         },
 
         /**
          *
          */
         nextInteraction() {
+            if (this.selectedProspects.length == 0) {
+                return;
+            }
+
             if (
                 this.selectedProspects.length - 1 >
-                this.this.currentProspectIndex
+                this.currentProspectIndex
             ) {
                 this.currentProspectIndex++;
             } else {
@@ -1767,22 +2159,15 @@ export default {
         },
 
         slideWidth() {
-            if (this.cloudtalkPhoneDisplayed) {
-                if (
-                    this.cloudtalkCallContextVisible &&
-                    this.cloudtalkContextPanelVisible
-                ) {
-                    return "720px";
-                }
-
-                return "435px";
+            if (
+                this.cloudtalkPhoneDisplayed &&
+                this.cloudtalkCallContextVisible &&
+                this.cloudtalkContextPanelVisible
+            ) {
+                return "620px";
             }
 
-            if (this.tab == 1 && this.frameTab == 0) {
-                return "395px";
-            }
-
-            return "350px";
+            return "300px";
         },
 
         /**
@@ -1857,6 +2242,24 @@ export default {
             return this.cloudtalkLookup && this.cloudtalkLookup.messages
                 ? this.cloudtalkLookup.messages
                 : [];
+        },
+
+        cloudtalkAgentName() {
+            if (!this.cloudtalkLine) {
+                return "";
+            }
+
+            const agentId =
+                this.cloudtalkLine.cloudtalk_agent_id ||
+                this.cloudtalkLine.config?.agent_id;
+
+            return (
+                this.cloudtalkLine.cloudtalk_agent_name ||
+                this.cloudtalkLine.agent_name ||
+                this.cloudtalkLine.config?.agent_name ||
+                this.cloudtalkLine.config?.agent_label ||
+                (agentId ? "Agent CloudTalk #" + agentId : "")
+            );
         },
 
         cloudtalkLine() {

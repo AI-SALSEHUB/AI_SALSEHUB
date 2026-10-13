@@ -87,6 +87,32 @@
                         </div>
                     </item>
 
+                    <!-- CloudTalk -->
+                    <item
+                        class="hc-prospect-sms-item"
+                        @click="
+                            (tab = 1), (frameTab = 0), (sms.source = 'cloudtalk')
+                        "
+                    >
+                        <icon class="hc-prospect-sms-cloudtalk-logo">
+                            <img
+                                src="/images/partenaire-ext/cloudtalk.png"
+                                alt="CloudTalk"
+                            />
+                        </icon>
+                        <div class="hc-item-main-content hc-flex-column">
+                            <span
+                                v-text="$t('prospect.sms.via_cloudtalk')"
+                            ></span>
+                            <span
+                                v-if="cloudtalkSmsLine"
+                                class="hc-prospect-sms-item-number"
+                                v-text="cloudtalkSmsLine.numero"
+                            ></span>
+                        </div>
+                        <icon class="fa fa-caret-right" />
+                    </item>
+
                     <!-- SMSBOX -->
                     <item
                         class="hc-prospect-sms-item"
@@ -292,6 +318,19 @@
                                             "
                                         ></div>
                                         <icon
+                                            tag="button"
+                                            type="button"
+                                            :class="[
+                                                'fa',
+                                                'fa-sync-alt',
+                                                'hc-prospect-sms-refresh',
+                                                fetchingSms ? 'fa-spin' : '',
+                                            ]"
+                                            v-tooltip="'Actualiser les messages'"
+                                            :disabled="fetchingSms"
+                                            @click.prevent.stop="fetchSms"
+                                        />
+                                        <icon
                                             v-if="sms.source == 'smsbox'"
                                             tag="a"
                                             class="fa fa-cog"
@@ -475,9 +514,9 @@
 
                                             <icon
                                                 tag="button"
-                                                class="fa fa-paper-plane"
+                                                class="fa fa-paper-plane hc-prospect-sms-send"
                                                 v-tooltip="'Envoyer'"
-                                                style="color: #8641a6"
+                                                :disabled="!canSendSms"
                                             />
                                         </div>
                                         <loading :loading="addingSms" />
@@ -571,6 +610,31 @@
 .hc-prospect-sms-item-number {
     font-size: 11px;
     color: #999999;
+}
+
+.hc-prospect-sms-cloudtalk-logo img {
+    display: block;
+    max-width: 26px;
+    max-height: 26px;
+    object-fit: contain;
+}
+
+button.hc-prospect-sms-send {
+    color: #8641a6;
+}
+
+button.hc-prospect-sms-send:disabled,
+button.hc-prospect-sms-send:disabled:hover {
+    color: #bbbbbb;
+    cursor: not-allowed;
+    text-shadow: none;
+}
+
+button.hc-prospect-sms-refresh:disabled,
+button.hc-prospect-sms-refresh:disabled:hover {
+    color: #bbbbbb;
+    cursor: wait;
+    text-shadow: none;
 }
 
 #hc-prospect-sms-textarea {
@@ -740,6 +804,10 @@ export default {
         },
 
         async sendSMS() {
+            if (!this.canSendSms) {
+                return;
+            }
+
             this.addingSms = true;
 
             try {
@@ -845,6 +913,7 @@ export default {
     },
 
     computed: {
+        ...mapGetters("auth", ["user"]),
         ...mapGetters([
             "project",
             "prospect",
@@ -853,6 +922,7 @@ export default {
             "prospectSms",
             "slideOpen",
             "smsTemplates",
+            "lines",
             "can",
         ]),
 
@@ -909,6 +979,30 @@ export default {
          */
         smss() {
             return this.prospect ? this.prospectSms : this.bulkSms;
+        },
+
+        canSendSms() {
+            if (this.sms.source == "cloudtalk") {
+                return this.canSendCloudtalkSms;
+            }
+
+            return true;
+        },
+
+        canSendCloudtalkSms() {
+            return (
+                this.can("all.prospect.sms.add") && !!this.cloudtalkSmsLine
+            );
+        },
+
+        cloudtalkSmsLine() {
+            return this.lines.find(
+                (line) =>
+                    line.operator === "cloudtalk" &&
+                    this.user &&
+                    line.user_id == this.user.id &&
+                    line.numero
+            );
         },
     },
 };

@@ -9,42 +9,84 @@
             },
         ]"
     >
-        <cloudtalk
-            id="cloudtalk-phone"
-            class="hc-prospect-interaction-cloudtalk-phone"
-            :number="number"
-            :calling="calling"
-            :loading="loading"
-            @make-call="emitPanelEvent('make-call')"
-            @call-activity="emitPanelEvent('call-activity', $event)"
-            @ringing-call="emitPanelEvent('ringing-call', $event)"
-            @outgoing-call="emitPanelEvent('outgoing-call', $event)"
-            @call-ended="emitPanelEvent('call-ended', $event)"
-            @hangup-call="emitPanelEvent('hangup-call', $event)"
-            @answered-call="emitPanelEvent('answered-call', $event)"
-            @contact-info="emitPanelEvent('contact-info', $event)"
-        />
-
-        <button
-            v-if="contextVisible"
-            type="button"
-            class="hc-prospect-interaction-cloudtalk-context-toggle"
-            :aria-expanded="contextPanelVisible ? 'true' : 'false'"
-            :title="
-                contextPanelVisible
-                    ? 'Masquer le contexte'
-                    : 'Afficher le contexte'
-            "
-            @click="toggleContextPanel"
+        <item
+            class="hc-prospect-interaction-cloudtalk-back bordered"
+            @click="emitPanelEvent('back')"
         >
-            <icon class="fa fa-caret-right" />
-        </button>
+            <icon class="fa fa-caret-left" />
+            <div
+                class="hc-item-main-content"
+                v-text="$t('prospect.interaction.call_by_cloudtalk')"
+            ></div>
+        </item>
 
-        <aside
-            v-if="contextVisible"
-            v-show="contextPanelVisible"
-            class="hc-prospect-interaction-cloudtalk-context"
-        >
+        <div class="hc-prospect-interaction-cloudtalk-content">
+            <cloudtalk
+                id="cloudtalk-phone"
+                class="hc-prospect-interaction-cloudtalk-phone"
+                :number="number"
+                :calling="calling"
+                :loading="loading"
+                :agent-name="agentName"
+                @make-call="emitPanelEvent('make-call')"
+                @call-activity="emitPanelEvent('call-activity', $event)"
+                @ringing-call="emitPanelEvent('ringing-call', $event)"
+                @outgoing-call="emitPanelEvent('outgoing-call', $event)"
+                @call-ended="emitPanelEvent('call-ended', $event)"
+                @hangup-call="emitPanelEvent('hangup-call', $event)"
+                @answered-call="emitPanelEvent('answered-call', $event)"
+                @contact-info="emitPanelEvent('contact-info', $event)"
+            />
+
+            <div
+                v-if="retryVisible"
+                class="hc-prospect-interaction-cloudtalk-retry"
+            >
+                <div
+                    class="hc-prospect-interaction-cloudtalk-retry-title"
+                    v-text="`L'appel CloudTalk n'est pas passe.`"
+                ></div>
+                <div class="hc-prospect-interaction-cloudtalk-retry-actions">
+                    <button
+                        type="button"
+                        class="hc-prospect-interaction-cloudtalk-retry-button secondary"
+                        @click="emitPanelEvent('login-cloudtalk')"
+                    >
+                        <icon class="fa fa-sign-in" />
+                        <span v-text="`Se connecter a CloudTalk`"></span>
+                    </button>
+                    <button
+                        type="button"
+                        class="hc-prospect-interaction-cloudtalk-retry-button"
+                        :disabled="calling || loading"
+                        @click="emitPanelEvent('make-call')"
+                    >
+                        <icon class="fa fa-phone" />
+                        <span v-text="`Relancer l'appel`"></span>
+                    </button>
+                </div>
+            </div>
+
+            <button
+                v-if="contextVisible"
+                type="button"
+                class="hc-prospect-interaction-cloudtalk-context-toggle"
+                :aria-expanded="contextPanelVisible ? 'true' : 'false'"
+                :title="
+                    contextPanelVisible
+                        ? 'Masquer le contexte'
+                        : 'Afficher le contexte'
+                "
+                @click="toggleContextPanel"
+            >
+                <icon class="fa fa-caret-right" />
+            </button>
+
+            <aside
+                v-if="contextVisible"
+                v-show="contextPanelVisible"
+                class="hc-prospect-interaction-cloudtalk-context"
+            >
             <div
                 v-if="lookupLoading && !prospect"
                 class="hc-prospect-interaction-cloudtalk-context-loading"
@@ -242,7 +284,8 @@
                     </button>
                 </div>
             </template>
-        </aside>
+            </aside>
+        </div>
     </div>
 </template>
 
@@ -281,6 +324,16 @@ export default {
         },
 
         loading: {
+            type: Boolean,
+            default: false,
+        },
+
+        agentName: {
+            type: String,
+            default: "",
+        },
+
+        retryVisible: {
             type: Boolean,
             default: false,
         },
@@ -444,6 +497,8 @@ export default {
         "hangup-call",
         "answered-call",
         "contact-info",
+        "back",
+        "login-cloudtalk",
         "create-prospect",
         "context-panel-visible",
     ],
