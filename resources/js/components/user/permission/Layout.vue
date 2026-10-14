@@ -44,16 +44,14 @@
                 <item-list class="hc-flex-1" padding="5px">
                     <permission-row
                         v-for="permission in permissionGroup.sub"
-                        :key="permission.id"
+                        :key="permission.value || permission.id || permission.key"
                         :permission="permission"
                         :permission-value="currentPermissionValue(permission)"
-                        :value="
-                            isPermissionChecked(permission) ||
-                            isPermissionDisabled(permission)
-                        "
+                        :value="permissionValue(permission)"
                         :count="checkedPermissionsCount(permission)"
-                        :disabled="isPermissionDisabled(permission)"
+                        :disabled="permissionDisabled(permission)"
                         @click="setCurrentPermissionGroup(permission)"
+                        @change="changePermission(permission, $event)"
                     />
                 </item-list>
             </template>
@@ -63,16 +61,14 @@
                 v-for="permission in filteredPermissions(
                     currentPermissionGroup
                 )"
-                :key="permission.id"
+                :key="permission.value || permission.id || permission.key"
                 :permission="permission"
                 :permission-value="currentPermissionValue(permission)"
-                :value="
-                    isPermissionChecked(permission) ||
-                    isPermissionDisabled(permission)
-                "
+                :value="permissionValue(permission)"
                 :count="checkedPermissionsCount(permission)"
-                :disabled="isPermissionDisabled(permission)"
+                :disabled="permissionDisabled(permission)"
                 @click="setCurrentPermissionGroup(permission)"
+                @change="changePermission(permission, $event)"
             />
         </item-list>
     </div>
@@ -113,8 +109,13 @@ export default {
     },
 
     created() {
-        this.permissionGroups = [this.permissions];
-        this.computePermissionsList(permissionsList);
+        this.buildPermissionsList();
+    },
+
+    watch: {
+        userUsers() {
+            this.buildPermissionsList();
+        },
     },
 
     methods: {
@@ -122,6 +123,74 @@ export default {
             if (this.permissionGroups.length > 1) {
                 this.permissionGroups.pop();
             }
+        },
+
+        buildPermissionsList() {
+            const previousValues = this.permissionGroups
+                .map((permissionGroup) => permissionGroup.value)
+                .filter((value) => value);
+
+            this.permissions = JSON.parse(JSON.stringify(permissionsList));
+            this.setAgendaUsersPermissions(this.permissions);
+            this.computePermissionsList(this.permissions);
+
+            if (previousValues.length == 0) {
+                this.permissionGroups = [this.permissions];
+                return;
+            }
+
+            const permissionGroups = previousValues
+                .map((value) => this.findPermissionByValue(this.permissions, value))
+                .filter((permissionGroup) => permissionGroup);
+
+            this.permissionGroups =
+                permissionGroups.length > 0 ? permissionGroups : [this.permissions];
+        },
+
+        setAgendaUsersPermissions(permission) {
+            if (permission.key == "agenda") {
+                permission.sub = [
+                    {
+                        key: "all",
+                        name: "Tous les utilisateurs",
+                        icon: "fa-check-square icon-green",
+                        bulkPermissionAction: "agenda-users",
+                        ignoreParentPermission: true,
+                    },
+                    ...this.userUsers.map((user) => ({
+                        key: user.id.toString(),
+                        name: user.name,
+                        icon: "fa-user icon-brown",
+                        ignoreParentPermission: true,
+                    })),
+                ];
+                return;
+            }
+
+            if (permission.sub) {
+                permission.sub.forEach((sub) =>
+                    this.setAgendaUsersPermissions(sub)
+                );
+            }
+        },
+
+        findPermissionByValue(permission, value) {
+            if (permission.value == value) {
+                return permission;
+            }
+
+            if (!permission.sub) {
+                return null;
+            }
+
+            for (let i = 0; i < permission.sub.length; ++i) {
+                const result = this.findPermissionByValue(permission.sub[i], value);
+                if (result) {
+                    return result;
+                }
+            }
+
+            return null;
         },
 
         computePermissionsList(list, key) {
@@ -179,6 +248,83 @@ export default {
             const key = this.currentPermissionValue(permission);
 
             return this.isPermissionNameChecked(key);
+        },
+
+        permissionValue(permission) {
+            if (this.isBulkAgendaUsersPermission(permission)) {
+                return this.areAllAgendaUsersChecked();
+            }
+
+            if (permission && permission.ignoreParentPermission) {
+                return this.isPermissionChecked(permission);
+            }
+
+            return (
+                this.isPermissionChecked(permission) ||
+                this.isPermissionDisabled(permission)
+            );
+        },
+
+        permissionDisabled(permission) {
+            if (permission && permission.ignoreParentPermission) {
+                return false;
+            }
+
+            return this.isPermissionDisabled(permission);
+        },
+
+        isBulkAgendaUsersPermission(permission) {
+            return (
+                permission &&
+                permission.bulkPermissionAction == "agenda-users"
+            );
+        },
+
+        agendaUserPermissions() {
+            const agenda = this.findPermissionByValue(
+                this.permissions,
+                "all.project.user.agenda"
+            );
+
+            if (!agenda || !agenda.sub) {
+                return [];
+            }
+
+            return agenda.sub.filter(
+                (permission) => !this.isBulkAgendaUsersPermission(permission)
+            );
+        },
+
+        areAllAgendaUsersChecked() {
+            const permissions = this.agendaUserPermissions();
+
+            return (
+                permissions.length > 0 &&
+                permissions.every((permission) =>
+                    this.isPermissionChecked(permission)
+                )
+            );
+        },
+
+        changePermission(permission, event) {
+            if (!this.isBulkAgendaUsersPermission(permission)) {
+                return;
+            }
+
+            const checked = event.target.checked;
+
+            this.agendaUserPermissions()
+                .filter((permission) =>
+                    checked
+                        ? !this.isPermissionChecked(permission)
+                        : this.isPermissionChecked(permission)
+                )
+                .forEach((permission) => {
+                    store.dispatch(
+                        checked ? ADD_USER_PERMISSION : REMOVE_USER_PERMISSION,
+                        permission.value
+                    );
+                });
         },
 
         /**
@@ -279,7 +425,7 @@ export default {
     },
 
     computed: {
-        ...mapGetters(["user", "userPermissions", "userFullName"]),
+        ...mapGetters(["user", "userPermissions", "userFullName", "userUsers"]),
 
         currentPermissionGroup: {
             get() {

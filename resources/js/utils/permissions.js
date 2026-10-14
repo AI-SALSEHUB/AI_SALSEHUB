@@ -501,6 +501,7 @@ export default {
                             key: "agenda",
                             name: "Voir les agendas des autres utilisateurs",
                             icon: "fa-calendar icon-purple",
+                            sub: [],
                         },
                         {
                             key: "commission",

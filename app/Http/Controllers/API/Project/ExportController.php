@@ -50,9 +50,9 @@ class ExportController extends Controller
         if (empty($export->filters)) {
             dispatch((new ExportProspects($export))->onQueue('imports'));
             return back();
-        } else {
-            return Excel::download(new ProspectExport($export), $project->name . '.xlsx');
         }
+
+        return Excel::download(new ProspectExport($export, $this->getExportLimit($export)), $project->name . '.xlsx');
     }
 
     /**
@@ -69,7 +69,7 @@ class ExportController extends Controller
             dispatch((new ExportProspects($export))->onQueue('imports'));
             return back();
         } else {
-            return Excel::download(new ProspectExport($export), $project->name . '.xlsx');
+            return Excel::download(new ProspectExport($export, $this->getExportLimit($export)), $project->name . '.xlsx');
         }
     }
 
@@ -130,5 +130,13 @@ class ExportController extends Controller
                     'events', 'users'
                 ]
         );
+    }
+
+    /**
+     * Get export limit
+     */
+    protected function getExportLimit(Export $export)
+    {
+        return (int) $export->count;
     }
 }

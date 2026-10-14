@@ -15,6 +15,7 @@ import { mapGetters } from "vuex";
 
 // Actions
 import { FETCH_USER_PERMISSIONS } from "@/actions/project/user/permission";
+import { FETCH_USER_USERS } from "@/actions/project/user/user";
 
 // Components
 import Layout from "./Layout.vue";
@@ -31,6 +32,7 @@ export default {
         fetchUserPermissions() {
             if (this.user) {
                 store.dispatch(FETCH_USER_PERMISSIONS, this.user);
+                store.dispatch(FETCH_USER_USERS, this.user);
             }
         },
     },

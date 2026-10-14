@@ -58,6 +58,11 @@ export default {
 
     methods: {
         change(event) {
+            if (this.permission && this.permission.bulkPermissionAction) {
+                this.$emit("change", event);
+                return;
+            }
+
             store.dispatch(
                 event.target.checked
                     ? ADD_USER_PERMISSION

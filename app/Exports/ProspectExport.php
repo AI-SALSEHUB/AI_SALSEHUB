@@ -588,8 +588,12 @@ class ProspectExport implements FromCollection
                 $query->with('links:id,prospect_id,name,link');
             })
             ->orderBy($sortBy, $sortOrder)
-            ->skip($this->skip)
-            ->limit($this->limit)
+            ->when($this->skip > 0, function($query) {
+                $query->skip($this->skip);
+            })
+            ->when($this->limit > 0, function($query) {
+                $query->limit($this->limit);
+            })
             ->filter($this->getFilters())
             ->get();
     }

@@ -9,12 +9,17 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
+use Throwable;
 
 class ExportProspects implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    protected const CHUNK_SIZE = 250;
 
     protected Export $export;
     protected $summaryDataCount = 10;
@@ -32,25 +37,40 @@ class ExportProspects implements ShouldQueue
      */
     public function handle(): void
     {
-        $take = 1000;
+        $take = static::CHUNK_SIZE;
         $skip = 0;
         $page = 1;
+        $exportedRows = 0;
 
-        // Chunk data
-        do {
-            if ($this->export->count && $this->export->count == $skip) {
-                break;
-            }
-            
-            $exportCollection = new ProspectExport($this->export, $this->export->count ? min($take, $this->export->count - $skip) : $take, $skip);
+        try {
+            // Chunk data
+            do {
+                if ($this->export->count && $this->export->count == $skip) {
+                    break;
+                }
 
-            Excel::store($exportCollection, $this->export->id . '-' . $page . '.xlsx', 'exports');
-            $skip += $take;
-            ++$page;
-        } while ($exportCollection->getCount() >= $take);
+                $limit = $this->export->count ? min($take, $this->export->count - $skip) : $take;
+                $filename = $this->export->id . '-' . $page . '.xlsx';
 
-        // Notify export finished
-        $this->notifyExportFinished();
+                $exportCollection = new ProspectExport($this->export, $limit, $skip);
+
+                Excel::store($exportCollection, $filename, 'exports');
+                $exportedCount = $exportCollection->getCount();
+                $exportedRows += $exportedCount;
+
+                unset($exportCollection);
+                gc_collect_cycles();
+
+                $skip += $take;
+                ++$page;
+            } while ($exportedCount >= $take);
+
+            // Notify export finished
+            $this->notifyExportFinished();
+
+        } catch (Throwable $exception) {
+            throw $exception;
+        }
     }
 
     /**

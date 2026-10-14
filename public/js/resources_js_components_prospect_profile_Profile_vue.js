@@ -12,7 +12,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
 /* harmony import */ var _components_google_map_Map_vue__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @/components/google/map/Map.vue */ "./resources/js/components/google/map/Map.vue");
-/* provided dependency */ var process = __webpack_require__(/*! process/browser.js */ "./node_modules/process/browser.js");
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
   components: {
@@ -25,7 +24,7 @@ __webpack_require__.r(__webpack_exports__);
   },
   computed: {
     apiKey: function apiKey() {
-      return process.env.MIX_GOOGLE_MAP_API_KEY;
+      return "AIzaSyCeXgdUFop51vFS_x8Bj5JlrCOZak8h4NA";
     }
   }
 });
