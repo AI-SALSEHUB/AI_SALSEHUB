@@ -100,7 +100,7 @@ export default {
                 this.createWebhooks().then(() => {
                     const importProspects = () => {
                         hcConfirm(
-                            "Voulez-vous importer vos prospects HeroesCRM vers votre compte Pipedrive ?",
+                            "Voulez-vous importer vos prospects Salsehub vers votre compte Pipedrive ?",
                             () => {
                                 this.importProspects();
                                 store.commit(CLOSE_MODAL);

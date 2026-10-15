@@ -344,7 +344,11 @@
     align-items: center;
     padding: 50px 0;
     background-color: #f6f4f9;
-    background-image: url(/images/bg.jpg);
+    background-image:
+        linear-gradient(rgba(3, 12, 28, 0.42), rgba(3, 12, 28, 0.42)),
+        radial-gradient(ellipse 390px 460px at 50% 36%, rgba(2, 10, 24, 0.30), rgba(2, 10, 24, 0.12) 65%, transparent 100%),
+        linear-gradient(180deg, rgba(2, 10, 24, 0.13) 0%, rgba(2, 10, 24, 0.03) 52%, rgba(2, 10, 24, 0.36) 100%),
+        url('/images/bg.jpg?v=saleshub-login-20261015');
     background-size: cover;
     background-position: center;
     overflow: auto;
@@ -536,6 +540,34 @@
     position: absolute;
     width: 100%;
     top: 40px;
+}
+#hc-login {
+    background: rgba(255, 255, 255, 0.08);
+    /* backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px); */
+}
+
+#hc-login > .hc-login-bloc {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+#hc-login #hc-login-form-inputs input,
+#hc-login #hc-login-form-inputs input:focus,
+#hc-login #hc-login-form-inputs input:hover,
+#hc-login #hc-login-form-inputs input:autofill,
+#hc-login #hc-login-form-inputs input:-moz-autofill {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    appearance: none;
+    color: #111 !important;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    outline: none;
+}
+
+#hc-login > .hc-login-bloc {
+    background: rgba(255, 255, 255, 0.10);
 }
 </style>
 

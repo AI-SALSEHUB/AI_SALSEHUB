@@ -1,5 +1,5 @@
 {
-    "app_name": "Heroes CRM",
+    "app_name": "Salsehub",
 
     "add": "Add",
     "new": "New",
@@ -65,7 +65,7 @@
     "users": "Users",
     "products": "Products",
 
-    "copyright": "Heroes CRM since 2002 Reproduction prohibited - All rights reserved / Reproduction forbidden",
+    "copyright": "Salsehub since 2002 Reproduction prohibited - All rights reserved / Reproduction forbidden",
     "request_error": "Request error.",
 
     "auth": {
@@ -86,7 +86,7 @@
         },
         "login": {
             "title": "Sign in",
-            "authenticate": "Log in to Heroes CRM",
+            "authenticate": "Log in to Salsehub",
             "authenticating": "Log in ...",
             "forget_password": "I forgot my password ...",
             "sign_up": "Sign up",
@@ -111,7 +111,7 @@
             "1": "<b>GDPR / SSL Security</b> reinforced.",
             "2": "<b>Encryption / Option</b> controlled.",
             "3": "99.99% <b>server availability</b> + <b>Backup</b> in real time.",
-            "4": "The entire Heroes CRM team has been at your service since 2002."
+            "4": "The entire Salsehub team has been at your service since 2002."
         },
         "partner": {
             "title": "More than 200 partners and connectors included",
@@ -1412,7 +1412,7 @@
         "new": "New event",
         "move": "Move event",
         "google_calendar_associated_account": "Google calendar associated account",
-        "google_calendar_remove_account_confirm": "Do you really want to no longer associate your Google Calendar account with Heroes CRM ?",
+        "google_calendar_remove_account_confirm": "Do you really want to no longer associate your Google Calendar account with Salsehub ?",
         "calendar": "Calendar",
         "user": "User",
         "vehicle": "Vehicle",
@@ -1604,7 +1604,7 @@
             "description": "Prospects, Agendas, Map, ..."
         },
         "copyright": {
-            "title": "HeroesCRM.com since 2002 Reproduction forbidden - All rights reserved.",
+            "title": "Salsehub since 2002 Reproduction forbidden - All rights reserved.",
             "technical_questions": "Technical questions",
             "commercial_questions": "Commercial questions"
         },

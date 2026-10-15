@@ -2,7 +2,7 @@
 
 @section('main-title')
 Se connecter sur<br>
-Heroes CRM
+Salsehub
 @endsection
 
 @section('body')

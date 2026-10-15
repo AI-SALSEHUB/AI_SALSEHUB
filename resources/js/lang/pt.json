@@ -54,7 +54,7 @@
     "invoices": "Faturas",
     "users": "Usuários",
     "products": "Produtos",
-    "copyright": "Heroes CRM desde 2002 Reprodução proibida - Todos os direitos reservados / Reprodução proibida",
+    "copyright": "Salsehub desde 2002 Reprodução proibida - Todos os direitos reservados / Reprodução proibida",
     "request_error": "Erro de solicitação.",
     "auth": {
         "email": "E-mail",
@@ -74,7 +74,7 @@
         },
         "login": {
             "title": "Entrar",
-            "authenticate": "Faça login no Heroes CRM",
+            "authenticate": "Faça login no Salsehub",
             "authenticating": "Conecte-se ...",
             "forget_password": "Esqueci a minha senha ...",
             "sign_up": "Inscrever-se",
@@ -99,7 +99,7 @@
             "1": "<b>Segurança GDPR/SSL</b> reforçado.",
             "2": "<b>Criptografia/Opção</b> controlada.",
             "3": "99,99% <b>disponibilidade do servidor</b> + <b>Cópia de segurança</b> em tempo real.",
-            "4": "Toda a equipe do Heroes CRM está ao seu serviço desde 2002."
+            "4": "Toda a equipe do Salsehub está ao seu serviço desde 2002."
         },
         "partner": {
             "title": "Mais de 200 parceiros e conectores incluídos",
@@ -1290,7 +1290,7 @@
         "new": "Novo evento",
         "move": "Mover evento",
         "google_calendar_associated_account": "Conta associada ao calendário do Google",
-        "google_calendar_remove_account_confirm": "Você realmente deseja não associar mais sua conta do Google Agenda ao Heroes CRM?",
+        "google_calendar_remove_account_confirm": "Você realmente deseja não associar mais sua conta do Google Agenda ao Salsehub?",
         "calendar": "Calendário",
         "user": "Do utilizador",
         "vehicle": "Veículo",
