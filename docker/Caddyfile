@@ -1,0 +1,18 @@
+{
+	email {$ACME_EMAIL}
+}
+
+ai.saleshub.business {
+	root * /var/www/public
+	encode gzip
+	request_body {
+		max_size 60MB
+	}
+	php_fastcgi app:9000 {
+		read_timeout 120s
+	}
+	file_server
+
+	@hidden path /.* /storage/logs/*
+	respond @hidden 404
+}
