@@ -17,12 +17,17 @@ services:
   app:
     <<: *app
 
+  # Workers et scheduler : OPTIONNELS (profil "workers").
+  # Ils ne demarrent PAS avec "docker compose up -d".
+  # Activation (bascule) : docker compose -f docker-compose.prod.yml --profile workers up -d
   supervisor:
     <<: *app
+    profiles: ["workers"]
     command: ["supervisord", "-c", "/var/www/docker/supervisord.conf"]
 
   scheduler:
     <<: *app
+    profiles: ["workers"]
     command: ["sh", "-c", "while true; do su -s /bin/sh www-data -c 'php artisan schedule:run' ; sleep 60; done"]
 
   web:
