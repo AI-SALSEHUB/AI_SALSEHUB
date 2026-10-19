@@ -28,7 +28,7 @@
                     class="hc-user-registration-project-creator"
                     v-text="
                         'Par ' +
-                        (project.creator ? project.creator.name : 'HeroesCRM')
+                        (project.creator ? project.creator.name : 'Saleshub')
                     "
                 >
                 </span>

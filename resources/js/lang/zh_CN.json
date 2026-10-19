@@ -50,7 +50,7 @@
     "invoices": "发票",
     "users": "用户",
     "products": "产品",
-    "copyright": "Heroes CRM 自 2002 年起禁止复制 - 保留所有权利/禁止复制",
+    "copyright": "Salsehub 自 2002 年起禁止复制 - 保留所有权利/禁止复制",
     "request_error": "请求错误。",
     "auth": {
         "email": "电子邮件",
@@ -95,7 +95,7 @@
             "1": "<b>GDPR / SSL 安全</b> 加强。",
             "2": "<b>加密/选项</b> 受控。",
             "3": "99.99% <b>服务器可用性</b> + <b>备份</b> 实时。",
-            "4": "自 2002 年以来，整个 Heroes CRM 团队一直为您服务。"
+            "4": "自 2002 年以来，整个 Salsehub 团队一直为您服务。"
         },
         "partner": {
             "title": "包括 200 多个合作伙伴和连接者",
@@ -1246,7 +1246,7 @@
         "view_and_edit": "查看和编辑事件",
         "move": "移动事件",
         "google_calendar_associated_account": "Google 日历关联帐户",
-        "google_calendar_remove_account_confirm": "您真的不想再将您的 Google 日历帐户与 Heroes CRM 关联吗？",
+        "google_calendar_remove_account_confirm": "您真的不想再将您的 Google 日历帐户与 Salsehub 关联吗？",
         "calendar": "日历",
         "user": "用户",
         "prospect": "前景",

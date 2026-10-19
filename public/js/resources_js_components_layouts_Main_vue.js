@@ -44745,7 +44745,7 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
               _this2.update().then(function () {
                 _this2.createWebhooks().then(function () {
                   var importProspects = function importProspects() {
-                    hcConfirm("Voulez-vous importer vos prospects HeroesCRM vers votre compte Pipedrive ?", function () {
+                    hcConfirm("Voulez-vous importer vos prospects Salsehub vers votre compte Pipedrive ?", function () {
                       _this2.importProspects();
                       _store__WEBPACK_IMPORTED_MODULE_0__["default"].commit(_actions_modal__WEBPACK_IMPORTED_MODULE_2__.CLOSE_MODAL);
                     }, function () {

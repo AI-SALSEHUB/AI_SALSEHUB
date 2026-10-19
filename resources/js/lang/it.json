@@ -50,7 +50,7 @@
     "invoices": "Fatture",
     "users": "Utenti",
     "products": "Prodotti",
-    "copyright": "Heroes CRM dal 2002 Riproduzione vietata - Tutti i diritti riservati / Riproduzione vietata",
+    "copyright": "Salsehub dal 2002 Riproduzione vietata - Tutti i diritti riservati / Riproduzione vietata",
     "request_error": "Errore nella richiesta.",
     "auth": {
         "email": "E-mail",
@@ -70,7 +70,7 @@
         },
         "login": {
             "title": "Registrazione",
-            "authenticate": "Accedi a Heroes CRM",
+            "authenticate": "Accedi a Salsehub",
             "authenticating": "Login ...",
             "forget_password": "Ho dimenticato la mia password ...",
             "sign_up": "Iscrizione",
@@ -95,7 +95,7 @@
             "1": "<b>Sicurezza GDPR/SSL</b> rinforzata.",
             "2": "<b>Crittografia/Opzione</b> controllato.",
             "3": "99,99% <b>disponibilità del server</b> + <b>Backup</b> in tempo reale.",
-            "4": "L'intero team di Heroes CRM è al tuo servizio dal 2002."
+            "4": "L'intero team di Salsehub è al tuo servizio dal 2002."
         },
         "partner": {
             "title": "Sono inclusi più di 200 partner e connettori",
@@ -1246,7 +1246,7 @@
         "view_and_edit": "Visualizza e modifica l'evento",
         "move": "Sposta evento",
         "google_calendar_associated_account": "Account associato al calendario di Google",
-        "google_calendar_remove_account_confirm": "Vuoi davvero non associare più il tuo account Google Calendar a Heroes CRM?",
+        "google_calendar_remove_account_confirm": "Vuoi davvero non associare più il tuo account Google Calendar a Salsehub?",
         "calendar": "Calendario",
         "user": "Utente",
         "prospect": "Prospettiva",

@@ -28,3 +28,5 @@ supervisord.log.*
 nginx/certbot
 mysql-data/
 backup/
+.rnd
+composer.json.backup

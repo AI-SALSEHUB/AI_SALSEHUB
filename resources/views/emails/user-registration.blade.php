@@ -88,7 +88,7 @@
 					    width: 100%;
 					    padding: 0 30px;
 					    box-sizing: border-box;
-					">On vient de vous inscrire sur HeroesCRM.
+					">On vient de vous inscrire sur Salsehub.
 Pour confirmer votre inscription et paramétrer votre compte, veuillez accéder au lien suivant:</span>
 				</div>
 			</div>

@@ -1,5 +1,5 @@
 {
-    "app_name": "Heroes CRM",
+    "app_name": "Salsehub",
 
     "add": "Ajouter",
     "new": "Nouveau",
@@ -65,7 +65,7 @@
     "users": "Utilisateurs",
     "products": "Produits",
 
-    "copyright": "Heroes CRM since 2002 Reproduction interdite - Tous droits réservés / Reproduction forbidden - All rights reserved",
+    "copyright": "Salsehub since 2002 Reproduction interdite - Tous droits réservés / Reproduction forbidden - All rights reserved",
     "request_error": "Erreur de requête.",
 
     "auth": {
@@ -86,7 +86,7 @@
         },
         "login": {
             "title": "Connexion",
-            "authenticate": "Se connecter sur Heroes CRM",
+            "authenticate": "Se connecter sur Salsehub",
             "authenticating": "Connexion ...",
             "forget_password": "J'ai oublié mon mot de passe",
             "sign_up": "Je veux m'inscrire",
@@ -111,7 +111,7 @@
             "1": "<b>RGPD / Sécurité SSL</b> renforcés.",
             "2": "<b>Cryptage / Option</b> contrôlés.",
             "3": "99,99% de <b>disponibilité des serveurs</b> + <b>Backup</b> en temps réel.",
-            "4": "Toute l’équipe du Heroes CRM est à votre service depuis 2002."
+            "4": "Toute l’équipe du Salsehub est à votre service depuis 2002."
         },
         "partner": {
             "title": "Plus de 200 partenaires et connecteurs inclus",
@@ -1609,7 +1609,7 @@
             "description": "Prospects, Agendas, Map, ..."
         },
         "copyright": {
-            "title": "HeroesCRM.com depuis 2002 Reproduction interdite - Tous droits réservés.",
+            "title": "Salsehub depuis 2002 Reproduction interdite - Tous droits réservés.",
             "technical_questions": "Questions techniques",
             "commercial_questions": "Questions commerciales"
         },

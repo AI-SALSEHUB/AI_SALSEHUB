@@ -50,7 +50,7 @@
     "invoices": "الفواتير",
     "users": "المستخدمين",
     "products": "منتجات",
-    "copyright": "Heroes CRM منذ عام 2002 ممنوع الاستنساخ - جميع الحقوق محفوظة / ممنوع الاستنساخ",
+    "copyright": "Salsehub منذ عام 2002 ممنوع الاستنساخ - جميع الحقوق محفوظة / ممنوع الاستنساخ",
     "request_error": "خطأ الطلب.",
     "auth": {
         "email": "بريد إلكتروني",
@@ -70,7 +70,7 @@
         },
         "login": {
             "title": "تسجيل الدخول",
-            "authenticate": "قم بتسجيل الدخول إلى Heroes CRM",
+            "authenticate": "قم بتسجيل الدخول إلى Salsehub",
             "authenticating": "تسجيل الدخول ...",
             "forget_password": "لقد نسيت كلمة المرور ...",
             "sign_up": "اشتراك",
@@ -95,7 +95,7 @@
             "1": "<b>اللائحة العامة لحماية البيانات / أمان SSL</b> عززت.",
             "2": "<b>التشفير / الخيار</b> خاضع للسيطرة.",
             "3": "99.99% <b>توافر الخادم</b> + <b>دعم</b> في الوقت الحقيقي.",
-            "4": "فريق Heroes CRM بأكمله في خدمتك منذ عام 2002."
+            "4": "فريق Salsehub بأكمله في خدمتك منذ عام 2002."
         },
         "partner": {
             "title": "تم تضمين أكثر من 200 شريك وموصل",
@@ -1246,7 +1246,7 @@
         "view_and_edit": "عرض وتحرير الحدث",
         "move": "نقل الحدث",
         "google_calendar_associated_account": "الحساب المرتبط بتقويم Google",
-        "google_calendar_remove_account_confirm": "هل تريد حقًا التوقف عن ربط حساب تقويم Google الخاص بك بـ Heroes CRM؟",
+        "google_calendar_remove_account_confirm": "هل تريد حقًا التوقف عن ربط حساب تقويم Google الخاص بك بـ Salsehub؟",
         "calendar": "تقويم",
         "user": "مستخدم",
         "prospect": "احتمال",

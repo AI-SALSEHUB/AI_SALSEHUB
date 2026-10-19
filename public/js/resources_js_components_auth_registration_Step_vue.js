@@ -1433,7 +1433,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
     textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.project.description)
   }, null, 8 /* PROPS */, _hoisted_6)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_7, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
     "class": "hc-user-registration-project-creator",
-    textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)('Par ' + ($props.project.creator ? $props.project.creator.name : 'HeroesCRM'))
+    textContent: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)('Par ' + ($props.project.creator ? $props.project.creator.name : 'Saleshub'))
   }, null, 8 /* PROPS */, _hoisted_8), $props.project.roles.length > 0 ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("span", {
     key: 0,
     "class": "hc-user-registration-project-role",

@@ -54,7 +54,7 @@
     "invoices": "Facturas",
     "users": "Usuarios",
     "products": "Productos",
-    "copyright": "Heroes CRM desde 2002 Reproducción prohibida - Todos los derechos reservados / Reproducción prohibida",
+    "copyright": "Salsehub desde 2002 Reproducción prohibida - Todos los derechos reservados / Reproducción prohibida",
     "request_error": "Solicitud de error.",
     "auth": {
         "email": "Correo electrónico",
@@ -99,7 +99,7 @@
             "1": "<b>RGPD/Seguridad SSL</b> reforzado.",
             "2": "<b>Cifrado/Opción</b> revisado.",
             "3": "99,99% <b>disponibilidad del servidor</b> + <b>Respaldo</b> en tiempo real.",
-            "4": "Todo el equipo de Heroes CRM está a tu servicio desde 2002."
+            "4": "Todo el equipo de Salsehub está a tu servicio desde 2002."
         },
         "partner": {
             "title": "Más de 200 socios y conectores incluidos",
@@ -1290,7 +1290,7 @@
         "new": "Nuevo evento",
         "move": "Mover evento",
         "google_calendar_associated_account": "Cuenta asociada al calendario de Google",
-        "google_calendar_remove_account_confirm": "¿Realmente deseas dejar de asociar tu cuenta de Google Calendar con Heroes CRM?",
+        "google_calendar_remove_account_confirm": "¿Realmente deseas dejar de asociar tu cuenta de Google Calendar con Salsehub?",
         "calendar": "Calendario",
         "user": "Usuario",
         "vehicle": "Vehículo",

@@ -1,0 +1,89 @@
+name: saleshub
+
+x-app: &app
+  image: ghcr.io/ai-salsehub/ai_salsehub-app:${IMAGE_TAG:-latest}
+  restart: unless-stopped
+  env_file: .env
+  volumes:
+    - storage:/var/www/storage
+  depends_on:
+    mysql:
+      condition: service_healthy
+    redis:
+      condition: service_started
+  networks: [internal]
+
+services:
+  app:
+    <<: *app
+
+  supervisor:
+    <<: *app
+    command: ["supervisord", "-c", "/var/www/docker/supervisord.conf"]
+
+  scheduler:
+    <<: *app
+    command: ["sh", "-c", "while true; do su -s /bin/sh www-data -c 'php artisan schedule:run' ; sleep 60; done"]
+
+  web:
+    image: ghcr.io/ai-salsehub/ai_salsehub-web:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - storage:/var/www/storage:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [app]
+    networks: [internal]
+
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci", "--innodb-buffer-pool-size=1G"]
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backup:/backup
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks: [internal]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    networks: [internal]
+
+  # Adminer : accessible uniquement via tunnel SSH (127.0.0.1:8081)
+  adminer:
+    image: adminer:4
+    restart: unless-stopped
+    environment:
+      ADMINER_DEFAULT_SERVER: mysql
+    ports:
+      - "127.0.0.1:8081:8080"
+    depends_on: [mysql]
+    networks: [internal]
+
+volumes:
+  storage:
+  mysql_data:
+  redis_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  internal:
